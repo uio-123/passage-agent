@@ -1,16 +1,19 @@
 package com.yupi.template.agent.workflow;
 
 import com.yupi.template.agent.ArticleAgentOrchestrator;
+import com.yupi.template.agent.graph.ArticleWorkflowExecutor;
 import com.yupi.template.agent.api.WorkflowRunner;
 import com.yupi.template.agent.api.WorkflowError;
 import com.yupi.template.agent.api.WorkflowErrorCode;
 import com.yupi.template.agent.api.WorkflowExecutionException;
 import com.yupi.template.agent.api.WorkflowExecutionResult;
 import com.yupi.template.agent.api.WorkflowStage;
+import com.yupi.template.agent.metrics.WorkflowMetricsCollector;
 import com.yupi.template.agent.run.AgentRun;
 import com.yupi.template.agent.run.AgentRunStatus;
 import com.yupi.template.agent.state.WorkflowState;
 import com.yupi.template.agent.state.WorkflowStateMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -24,18 +27,34 @@ import java.util.function.Consumer;
 @Service
 public class ArticleWorkflowRunner implements WorkflowRunner {
 
-    private final ArticleAgentOrchestrator orchestrator;
+    private final ArticleWorkflowExecutor graphExecutor;
+    private final WorkflowMetricsCollector metricsCollector;
 
     public ArticleWorkflowRunner(ArticleAgentOrchestrator orchestrator) {
-        this.orchestrator = orchestrator;
+        this(orchestrator, new WorkflowMetricsCollector());
+    }
+
+    public ArticleWorkflowRunner(ArticleAgentOrchestrator orchestrator, WorkflowMetricsCollector metricsCollector) {
+        this((ArticleWorkflowExecutor) orchestrator, metricsCollector);
+    }
+
+    @Autowired
+    public ArticleWorkflowRunner(ArticleWorkflowExecutor graphExecutor, WorkflowMetricsCollector metricsCollector) {
+        this.graphExecutor = graphExecutor;
+        this.metricsCollector = metricsCollector;
     }
 
     @Override
     public WorkflowExecutionResult generateTitles(WorkflowState state, Consumer<String> streamHandler) {
+        return metricsCollector.measure(state.run().runId(), WorkflowStage.TITLES_GENERATED,
+                () -> generateTitlesInternal(state, streamHandler));
+    }
+
+    private WorkflowExecutionResult generateTitlesInternal(WorkflowState state, Consumer<String> streamHandler) {
         var legacy = WorkflowStateMapper.toLegacy(state);
         AgentRun running = resumeForExecution(state.run(), WorkflowStage.TITLES_GENERATED);
         execute(running, WorkflowStage.TITLES_GENERATED,
-                () -> orchestrator.executePhase1_GenerateTitles(legacy, streamHandler));
+                () -> graphExecutor.executeTitles(legacy, streamHandler));
         return new WorkflowExecutionResult(WorkflowStateMapper.fromLegacy(
                 running.transitionTo(AgentRunStatus.WAITING_FOR_APPROVAL, Instant.now()), legacy),
                 WorkflowStage.TITLES_GENERATED);
@@ -43,11 +62,16 @@ public class ArticleWorkflowRunner implements WorkflowRunner {
 
     @Override
     public WorkflowExecutionResult generateOutline(WorkflowState state, Consumer<String> streamHandler) {
+        return metricsCollector.measure(state.run().runId(), WorkflowStage.OUTLINE_GENERATED,
+                () -> generateOutlineInternal(state, streamHandler));
+    }
+
+    private WorkflowExecutionResult generateOutlineInternal(WorkflowState state, Consumer<String> streamHandler) {
         requireSelectedTitle(state, WorkflowStage.OUTLINE_GENERATED);
         var legacy = WorkflowStateMapper.toLegacy(state);
         AgentRun running = resumeForExecution(state.run(), WorkflowStage.OUTLINE_GENERATED);
         execute(running, WorkflowStage.OUTLINE_GENERATED,
-                () -> orchestrator.executePhase2_GenerateOutline(legacy, streamHandler));
+                () -> graphExecutor.executeOutline(legacy, streamHandler));
         return new WorkflowExecutionResult(WorkflowStateMapper.fromLegacy(
                 running.transitionTo(AgentRunStatus.WAITING_FOR_APPROVAL, Instant.now()), legacy),
                 WorkflowStage.OUTLINE_GENERATED);
@@ -55,6 +79,11 @@ public class ArticleWorkflowRunner implements WorkflowRunner {
 
     @Override
     public WorkflowExecutionResult generateContent(WorkflowState state, Consumer<String> streamHandler) {
+        return metricsCollector.measure(state.run().runId(), WorkflowStage.ARTICLE_COMPLETED,
+                () -> generateContentInternal(state, streamHandler));
+    }
+
+    private WorkflowExecutionResult generateContentInternal(WorkflowState state, Consumer<String> streamHandler) {
         if (state.draft().outline() == null) {
             throw invalidState(state.run(), WorkflowStage.ARTICLE_COMPLETED,
                     "An approved outline is required before content generation");
@@ -62,7 +91,7 @@ public class ArticleWorkflowRunner implements WorkflowRunner {
         var legacy = WorkflowStateMapper.toLegacy(state);
         AgentRun running = resumeForExecution(state.run(), WorkflowStage.ARTICLE_COMPLETED);
         execute(running, WorkflowStage.ARTICLE_COMPLETED,
-                () -> orchestrator.executePhase3_GenerateContent(legacy, streamHandler));
+                () -> graphExecutor.executeContent(legacy, streamHandler));
         return new WorkflowExecutionResult(WorkflowStateMapper.fromLegacy(
                 running.transitionTo(AgentRunStatus.COMPLETED, Instant.now()), legacy),
                 WorkflowStage.ARTICLE_COMPLETED);

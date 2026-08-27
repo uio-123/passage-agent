@@ -369,7 +369,7 @@ generateStructured(StructuredRequest<T>) -> T
 
 执行顺序、每项验收、回滚与阶段门禁见 `p0-b_execution_plan.md`；该阶段文档经当前实现与测试状态校验后执行。进入 P1 前另行生成并校验 P1 专用执行文档。
 
-- [ ] 记录当前主链路的功能、耗时、模型调用次数和已知失败点，建立改造基线。
+- [x] 记录当前主链路的本地可比较基线：`WorkflowMetricsCollector` 在固定 Fake 三阶段工作流中采集阶段耗时、模型调用次数、结果状态和失败码；该数据不代表线上性能。
 - [ ] 以已确认的 Spring Boot 单后端作为开发基线，不恢复或维护 Go/Python 实现。
 - [x] 新建框架无关的 typed `WorkflowState` 与 `WorkflowStateReducer`，覆盖文章输入、草稿和交付物的不可变状态转换。
 - [x] 新建项目自有 `WorkflowRunner` API 与 `ArticleWorkflowRunner` 过渡实现，调用方不再接触 `StateGraph` 类型，并保留标题/大纲审批边界。

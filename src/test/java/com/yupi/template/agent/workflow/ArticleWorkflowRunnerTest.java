@@ -6,6 +6,8 @@ import com.yupi.template.agent.api.WorkflowExecutionException;
 import com.yupi.template.agent.api.WorkflowExecutionResult;
 import com.yupi.template.agent.api.WorkflowStage;
 import com.yupi.template.agent.fixture.ArticleWorkflowFixture;
+import com.yupi.template.agent.graph.ArticleWorkflowGraphAdapter;
+import com.yupi.template.agent.metrics.WorkflowMetricsCollector;
 import com.yupi.template.agent.run.AgentRunStatus;
 import com.yupi.template.agent.state.WorkflowState;
 import com.yupi.template.agent.state.WorkflowStateReducer;
@@ -21,7 +23,8 @@ class ArticleWorkflowRunnerTest {
 
     @Test
     void runsPhasesThroughTypedStateAndPreservesApprovalBoundaries() {
-        ArticleWorkflowRunner runner = new ArticleWorkflowRunner(new DeterministicOrchestrator());
+        ArticleWorkflowRunner runner = new ArticleWorkflowRunner(
+                new ArticleWorkflowGraphAdapter(new DeterministicOrchestrator()), new WorkflowMetricsCollector());
         WorkflowState initial = ArticleWorkflowFixture.workflowState("run-1", "task-1");
 
         WorkflowExecutionResult titlesResult = runner.generateTitles(initial, ignored -> { });
@@ -56,6 +59,21 @@ class ArticleWorkflowRunnerTest {
                 });
     }
 
+    @Test
+    void classifiesUnifiedGraphNodeFailureAsRetryableGraphExecution() {
+        ArticleWorkflowRunner runner = new ArticleWorkflowRunner(
+                new ArticleWorkflowGraphAdapter(new FailingTitleOrchestrator()), new WorkflowMetricsCollector());
+
+        assertThatThrownBy(() -> runner.generateTitles(ArticleWorkflowFixture.workflowState("run-3", "task-3"), ignored -> { }))
+                .isInstanceOf(WorkflowExecutionException.class)
+                .extracting(exception -> ((WorkflowExecutionException) exception).error())
+                .satisfies(error -> {
+                    assertThat(error.code()).isEqualTo(WorkflowErrorCode.GRAPH_EXECUTION);
+                    assertThat(error.stage()).isEqualTo(WorkflowStage.TITLES_GENERATED);
+                    assertThat(error.retryable()).isTrue();
+                });
+    }
+
     private static final class DeterministicOrchestrator extends ArticleAgentOrchestrator {
         @Override
         public void executePhase1_GenerateTitles(ArticleState state, java.util.function.Consumer<String> streamHandler) {
@@ -82,6 +100,13 @@ class ArticleWorkflowRunnerTest {
             state.setFullContent("完整正文");
             state.setImageRequirements(List.of());
             state.setImages(List.of());
+        }
+    }
+
+    private static final class FailingTitleOrchestrator extends ArticleAgentOrchestrator {
+        @Override
+        public void executePhase1_GenerateTitles(ArticleState state, java.util.function.Consumer<String> streamHandler) {
+            throw new IllegalStateException("simulated graph node failure");
         }
     }
 }

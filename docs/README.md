@@ -4,6 +4,7 @@
 |---|---|
 | [plan.md](plan.md) | 全项目阶段规划、优先级与验收标准 |
 | [p0-b_execution_plan.md](p0-b_execution_plan.md) | 当前 P0-B 的可执行任务、门禁与回滚方案 |
+| [p0-b-e3_execution_plan.md](p0-b-e3_execution_plan.md) | P0-B E3 统一图迁移的范围、验收与回滚方案 |
 | [development_log.md](development_log.md) | 重要开发决策、实施结果与验证记录 |
 | [framework-compatibility.md](framework-compatibility.md) | Spring AI / Java / LiteLLM 兼容性与版本冻结证据 |
 | [deerflow_reference.md](deerflow_reference.md) | Agent Harness 架构参考材料 |

@@ -16,7 +16,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
 /**
@@ -99,14 +98,12 @@ public class ParallelImageGenerator implements NodeAction {
             Map<String, List<ArticleState.ImageRequirement>> groupedBySource,
             StreamHandlerContext.StreamEventPublisher streamPublisher) {
         
-        // 使用线程安全的列表收集结果
-        CopyOnWriteArrayList<ArticleState.ImageResult> allImages = new CopyOnWriteArrayList<>();
-        
         // 为每种 imageSource 创建异步任务
-        List<CompletableFuture<Void>> futures = groupedBySource.entrySet().stream()
-                .map(entry -> CompletableFuture.runAsync(() -> {
+        List<CompletableFuture<List<ArticleState.ImageResult>>> futures = groupedBySource.entrySet().stream()
+                .map(entry -> CompletableFuture.supplyAsync(() -> {
                     String imageSource = entry.getKey();
                     List<ArticleState.ImageRequirement> requirements = entry.getValue();
+                    List<ArticleState.ImageResult> sourceImages = new ArrayList<>();
                     
                     log.info("开始处理 {} 类型的图片，数量: {}", imageSource, requirements.size());
                     
@@ -126,7 +123,7 @@ public class ParallelImageGenerator implements NodeAction {
                             
                             if (result.isSuccess()) {
                                 ArticleState.ImageResult imageResult = convertToImageResult(result);
-                                allImages.add(imageResult);
+                                sourceImages.add(imageResult);
                                 
                                 // 推送单张配图完成消息
                                 streamPublisher.publish(
@@ -147,13 +144,16 @@ public class ParallelImageGenerator implements NodeAction {
                     }
                     
                     log.info("完成处理 {} 类型的图片", imageSource);
+                    return sourceImages;
                 }))
                 .toList();
         
         // 等待所有任务完成
         CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
         
-        return new ArrayList<>(allImages);
+        return futures.stream()
+                .flatMap(future -> future.join().stream())
+                .collect(Collectors.toCollection(ArrayList::new));
     }
 
     /**

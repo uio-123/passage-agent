@@ -2,6 +2,7 @@ package com.yupi.template.agent.parallel;
 
 import com.alibaba.cloud.ai.graph.OverAllState;
 import com.alibaba.cloud.ai.graph.StateGraph;
+import com.alibaba.cloud.ai.graph.state.strategy.ReplaceStrategy;
 import com.yupi.template.agent.context.StreamHandlerContext;
 import com.yupi.template.agent.event.AgentStreamEvent;
 import com.yupi.template.agent.fixture.ArticleWorkflowFixture;
@@ -11,6 +12,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -36,7 +38,10 @@ class ParallelImageGeneratorContractTest {
         StreamHandlerContext.set("image-contract-1", events::add);
         ParallelImageGenerator generator = new ParallelImageGenerator(new FakeImageTool());
 
-        StateGraph graph = new StateGraph()
+        StateGraph graph = new StateGraph(() -> new HashMap<>(Map.of(
+                "imageRequirements", new ReplaceStrategy(),
+                "images", new ReplaceStrategy()
+        )))
                 .addNode("parallel_images", node_async(generator))
                 .addEdge(START, "parallel_images")
                 .addEdge("parallel_images", END);

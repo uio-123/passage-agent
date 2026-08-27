@@ -7,6 +7,7 @@ import com.yupi.template.agent.agents.*;
 import com.yupi.template.agent.config.AgentConfig;
 import com.yupi.template.agent.context.StreamHandlerContext;
 import com.yupi.template.agent.event.AgentStreamEventMapper;
+import com.yupi.template.agent.graph.ArticleWorkflowExecutor;
 import com.yupi.template.agent.parallel.ParallelImageGenerator;
 import com.yupi.template.agent.state.ArticleWorkflowKeys;
 import com.yupi.template.model.dto.article.ArticleState;
@@ -34,7 +35,7 @@ import static com.alibaba.cloud.ai.graph.action.AsyncNodeAction.node_async;
  */
 @Service
 @Slf4j
-public class ArticleAgentOrchestrator {
+public class ArticleAgentOrchestrator implements ArticleWorkflowExecutor {
 
     @Resource
     private AgentConfig agentConfig;
@@ -277,6 +278,10 @@ public class ArticleAgentOrchestrator {
             StreamHandlerContext.clear();
         }
     }
+
+    @Override public void executeTitles(ArticleState state, Consumer<String> handler) { executePhase1_GenerateTitles(state, handler); }
+    @Override public void executeOutline(ArticleState state, Consumer<String> handler) { executePhase2_GenerateOutline(state, handler); }
+    @Override public void executeContent(ArticleState state, Consumer<String> handler) { executePhase3_GenerateContent(state, handler); }
 
     // region 构建图
 

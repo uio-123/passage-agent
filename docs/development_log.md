@@ -1,5 +1,19 @@
 # 开发记录
 
+## 2026-08-27  P0-B E3/E4：统一图与收口验证
+
+- 统一图改为单一 `StateGraph` 的条件边路由：每次阶段调用从 `route` 进入标题、大纲或正文配图分支，审批边界继续由 typed state 与 `WorkflowRunner` 校验，不再误用 checkpoint。
+- 并行图片生成改为来源任务返回局部结果、主线程归并；契约图同步使用生产的 `ReplaceStrategy`，避免默认列表状态合并造成测试中的结果丢失。
+- 补齐统一图节点异常映射至可重试 `GRAPH_EXECUTION` 的契约。普通、流式、结构化、图片部分失败、SSE 与错误分类均由无网络测试覆盖。
+- JDK 21 下 `mvn test` 通过：25 项测试、0 失败、0 错误。P0-B 完成；持久化 checkpoint、重启恢复与 Tool 幂等仍明确留在 P1。
+
+## 2026-08-27  P0-B E2：本地可比较运行指标基线
+
+- 新增进程内 `WorkflowMetricsCollector`、`WorkflowExecutionMetrics` 和 `WorkflowStageMetrics`；每个 `WorkflowRunner` 阶段会记录耗时、模型调用次数、阶段结果状态与可选 `WorkflowErrorCode`，不新增数据库表、前端展示或外部遥测。
+- 新增 `MetricsCollectingAiModelPort` 作为项目模型端口的 Spring `@Primary` 装饰器，仅在工作流测量范围内计数，因而不改变模型请求、SSE 报文或既有 `SpringAiModelAdapter` 的行为。
+- 固定 Fake 三阶段工作流的调用基线为标题 1 次、大纲 1 次、正文配图 2 次；未选标题直接执行大纲会以失败状态记录 `INVALID_STATE`，没有模型调用。指标只用于相同本地输入下的回归比较，不能表述为线上性能。
+- JDK 21 下 `mvn test` 最终通过：24 项测试、0 失败、0 错误。首次主代码和测试代码增量编译均触发已知 Windows 编译器资源关闭问题；未改源码重跑后通过。
+
 ## 2026-08-27  文档目录收敛
 
 - 将计划、阶段执行文档、开发记录、框架兼容性、参考架构及 VIP/Stripe 说明统一迁入 `docs/`，新增 `docs/README.md` 作为索引；根目录仅保留项目入口 `README.md` 与协作规范 `AGENTS.md`。
