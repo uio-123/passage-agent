@@ -20,7 +20,7 @@
 
 涉及代码、架构或运行方式的实质性变更时，按需维护以下文档；只读分析、小型修复和纯讨论不必机械更新。
 
-### development_log.md
+### docs/development_log.md
 
 该文档用于记录完整开发过程，包括但不限于：
 
@@ -37,7 +37,7 @@
 - 在完成实质性功能、重要修复或架构调整后及时更新。
 - 保证开发过程可追溯。
 
-### plan.md
+### docs/plan.md
 
 该文档用于维护项目开发计划，包括：
 
@@ -62,7 +62,7 @@
 要求：
 
 - 架构、功能或运行方式发生重要变化时，及时同步更新。
-- 与代码及 development_log.md / plan.md 保持一致，避免过时信息。
+- 与代码及 `docs/development_log.md` / `docs/plan.md` 保持一致，避免过时信息。
 
 
 
@@ -81,8 +81,8 @@ Agent 应维护清晰、可审查的 Git 历史：
 在进行代码改动、架构调整或重要排障前：
 
 1. 首先阅读项目已有文档：
-   - development_log.md
-   - plan.md
+   - docs/development_log.md
+   - docs/plan.md
    - README.md（如果存在）
 
 2. 理解当前项目状态、已有设计以及开发计划。

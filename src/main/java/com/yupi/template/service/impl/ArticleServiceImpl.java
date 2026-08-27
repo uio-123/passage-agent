@@ -16,6 +16,7 @@ import com.yupi.template.model.enums.ArticlePhaseEnum;
 import com.yupi.template.model.enums.ArticleStatusEnum;
 import com.yupi.template.model.vo.ArticleVO;
 import com.yupi.template.service.ArticleAgentService;
+import com.yupi.template.service.AgentRunService;
 import com.yupi.template.service.ArticleService;
 import com.yupi.template.service.QuotaService;
 import com.yupi.template.utils.GsonUtils;
@@ -49,7 +50,11 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     @Resource
     private ArticleAgentService articleAgentService;
 
+    @Resource
+    private AgentRunService agentRunService;
+
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public String createArticleTask(String topic, String style, List<String> enabledImageMethods, User loginUser) {
         // 处理配图方式：如果用户未选择，给普通用户设置默认的非 VIP 方式
         List<String> finalImageMethods = processImageMethods(enabledImageMethods, loginUser);
@@ -73,8 +78,9 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         article.setCreateTime(LocalDateTime.now());
 
         this.save(article);
+        agentRunService.createRootRun(taskId);
 
-        log.info("文章任务已创建, taskId={}, userId={}, style={}", taskId, loginUser.getId(), style);
+        log.info("文章任务和根Agent Run已创建, taskId={}, userId={}, style={}", taskId, loginUser.getId(), style);
         return taskId;
     }
 

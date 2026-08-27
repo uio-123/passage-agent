@@ -2,7 +2,11 @@ package com.yupi.template.service;
 
 import com.google.gson.reflect.TypeToken;
 import com.yupi.template.agent.ArticleAgentOrchestrator;
+import com.yupi.template.agent.api.WorkflowRunner;
+import com.yupi.template.agent.api.WorkflowExecutionResult;
 import com.yupi.template.agent.config.AgentConfig;
+import com.yupi.template.agent.state.WorkflowState;
+import com.yupi.template.agent.state.WorkflowStateMapper;
 import com.yupi.template.manager.SseEmitterManager;
 import com.yupi.template.model.dto.article.ArticleState;
 import com.yupi.template.model.entity.Article;
@@ -39,6 +43,9 @@ public class ArticleAsyncService {
     private ArticleAgentOrchestrator articleAgentOrchestrator;
 
     @Resource
+    private WorkflowRunner workflowRunner;
+
+    @Resource
     private AgentConfig agentConfig;
 
     @Resource
@@ -46,6 +53,9 @@ public class ArticleAsyncService {
 
     @Resource
     private ArticleService articleService;
+
+    @Resource
+    private AgentRunService agentRunService;
 
     /**
      * 阶段1：异步生成标题方案
@@ -72,13 +82,18 @@ public class ArticleAsyncService {
             state.setStyle(style);
             
             // 执行阶段1：生成标题方案（根据配置选择执行方式）
+            ArticleState phaseState = state;
             if (useOrchestrator) {
-                articleAgentOrchestrator.executePhase1_GenerateTitles(state, message -> {
-                    handleAgentMessage(taskId, message, state);
+                WorkflowExecutionResult workflowResult = workflowRunner.generateTitles(
+                        WorkflowStateMapper.fromLegacy(agentRunService.getDomain(taskId), state), message -> {
+                    handleAgentMessage(taskId, message, phaseState);
                 });
+                WorkflowState workflowState = workflowResult.state();
+                state = WorkflowStateMapper.toLegacy(workflowState);
+                agentRunService.sync(workflowState.run(), workflowResult.stage().name());
             } else {
-                articleAgentService.executePhase1_GenerateTitles(state, message -> {
-                    handleAgentMessage(taskId, message, state);
+                articleAgentService.executePhase1_GenerateTitles(phaseState, message -> {
+                    handleAgentMessage(taskId, message, phaseState);
                 });
             }
             
@@ -99,6 +114,7 @@ public class ArticleAsyncService {
             
             // 更新状态为失败
             articleService.updateArticleStatus(taskId, ArticleStatusEnum.FAILED, e.getMessage());
+            agentRunService.markFailed(taskId, e.getMessage());
             
             // 推送错误消息
             sendSseMessage(taskId, SseMessageTypeEnum.ERROR, Map.of("message", e.getMessage()));
@@ -128,6 +144,7 @@ public class ArticleAsyncService {
             // 创建状态对象
             ArticleState state = new ArticleState();
             state.setTaskId(taskId);
+            state.setTopic(article.getTopic());
             state.setStyle(article.getStyle());
             state.setUserDescription(article.getUserDescription());
             
@@ -138,13 +155,18 @@ public class ArticleAsyncService {
             state.setTitle(title);
             
             // 执行阶段2：生成大纲（根据配置选择执行方式）
+            ArticleState phaseState = state;
             if (useOrchestrator) {
-                articleAgentOrchestrator.executePhase2_GenerateOutline(state, message -> {
-                    handleAgentMessage(taskId, message, state);
+                WorkflowExecutionResult workflowResult = workflowRunner.generateOutline(
+                        WorkflowStateMapper.fromLegacy(agentRunService.getDomain(taskId), state), message -> {
+                    handleAgentMessage(taskId, message, phaseState);
                 });
+                WorkflowState workflowState = workflowResult.state();
+                state = WorkflowStateMapper.toLegacy(workflowState);
+                agentRunService.sync(workflowState.run(), workflowResult.stage().name());
             } else {
-                articleAgentService.executePhase2_GenerateOutline(state, message -> {
-                    handleAgentMessage(taskId, message, state);
+                articleAgentService.executePhase2_GenerateOutline(phaseState, message -> {
+                    handleAgentMessage(taskId, message, phaseState);
                 });
             }
             
@@ -167,6 +189,7 @@ public class ArticleAsyncService {
             
             // 更新状态为失败
             articleService.updateArticleStatus(taskId, ArticleStatusEnum.FAILED, e.getMessage());
+            agentRunService.markFailed(taskId, e.getMessage());
             
             // 推送错误消息
             sendSseMessage(taskId, SseMessageTypeEnum.ERROR, Map.of("message", e.getMessage()));
@@ -196,6 +219,7 @@ public class ArticleAsyncService {
             // 创建状态对象
             ArticleState state = new ArticleState();
             state.setTaskId(taskId);
+            state.setTopic(article.getTopic());
             state.setStyle(article.getStyle());
             
             // 从数据库获取允许的配图方式
@@ -225,13 +249,18 @@ public class ArticleAsyncService {
             
             // 执行阶段3：生成正文+配图（根据配置选择执行方式）
             // 多智能体编排模式支持配图并行生成
+            ArticleState phaseState = state;
             if (useOrchestrator) {
-                articleAgentOrchestrator.executePhase3_GenerateContent(state, message -> {
-                    handleAgentMessage(taskId, message, state);
+                WorkflowExecutionResult workflowResult = workflowRunner.generateContent(
+                        WorkflowStateMapper.fromLegacy(agentRunService.getDomain(taskId), state), message -> {
+                    handleAgentMessage(taskId, message, phaseState);
                 });
+                WorkflowState workflowState = workflowResult.state();
+                state = WorkflowStateMapper.toLegacy(workflowState);
+                agentRunService.sync(workflowState.run(), workflowResult.stage().name());
             } else {
-                articleAgentService.executePhase3_GenerateContent(state, message -> {
-                    handleAgentMessage(taskId, message, state);
+                articleAgentService.executePhase3_GenerateContent(phaseState, message -> {
+                    handleAgentMessage(taskId, message, phaseState);
                 });
             }
             
@@ -253,6 +282,7 @@ public class ArticleAsyncService {
             
             // 更新状态为失败
             articleService.updateArticleStatus(taskId, ArticleStatusEnum.FAILED, e.getMessage());
+            agentRunService.markFailed(taskId, e.getMessage());
             
             // 推送错误消息
             sendSseMessage(taskId, SseMessageTypeEnum.ERROR, Map.of("message", e.getMessage()));

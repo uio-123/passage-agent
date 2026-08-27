@@ -3,6 +3,7 @@ package com.yupi.template.agent.parallel;
 import com.alibaba.cloud.ai.graph.OverAllState;
 import com.alibaba.cloud.ai.graph.action.NodeAction;
 import com.yupi.template.agent.context.StreamHandlerContext;
+import com.yupi.template.agent.state.ArticleWorkflowKeys;
 import com.yupi.template.agent.tools.ImageGenerationTool;
 import com.yupi.template.model.dto.article.ArticleState;
 import com.yupi.template.model.enums.SseMessageTypeEnum;
@@ -16,7 +17,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 /**
@@ -32,8 +32,8 @@ public class ParallelImageGenerator implements NodeAction {
 
     private final ImageGenerationTool imageGenerationTool;
 
-    public static final String INPUT_IMAGE_REQUIREMENTS = "imageRequirements";
-    public static final String OUTPUT_IMAGES = "images";
+    public static final String INPUT_IMAGE_REQUIREMENTS = ArticleWorkflowKeys.IMAGE_REQUIREMENTS;
+    public static final String OUTPUT_IMAGES = ArticleWorkflowKeys.IMAGES;
 
     @Override
     public Map<String, Object> apply(OverAllState state) throws Exception {
@@ -56,7 +56,7 @@ public class ParallelImageGenerator implements NodeAction {
                 .orElse(new ArrayList<>());
         
         // 从 ThreadLocal 获取流式处理器
-        Consumer<String> streamHandler = StreamHandlerContext.get();
+        StreamHandlerContext.StreamEventPublisher streamPublisher = StreamHandlerContext.capture();
         
         log.info("ParallelImageGenerator 开始执行: 配图需求数量={}", imageRequirements.size());
         
@@ -77,7 +77,7 @@ public class ParallelImageGenerator implements NodeAction {
                         )));
         
         // 并行执行不同类型的图片生成
-        List<ArticleState.ImageResult> allImages = executeParallel(groupedBySource, streamHandler);
+        List<ArticleState.ImageResult> allImages = executeParallel(groupedBySource, streamPublisher);
         
         // 按 position 排序
         allImages.sort((a, b) -> {
@@ -97,7 +97,7 @@ public class ParallelImageGenerator implements NodeAction {
      */
     private List<ArticleState.ImageResult> executeParallel(
             Map<String, List<ArticleState.ImageRequirement>> groupedBySource,
-            Consumer<String> streamHandler) {
+            StreamHandlerContext.StreamEventPublisher streamPublisher) {
         
         // 使用线程安全的列表收集结果
         CopyOnWriteArrayList<ArticleState.ImageResult> allImages = new CopyOnWriteArrayList<>();
@@ -129,11 +129,10 @@ public class ParallelImageGenerator implements NodeAction {
                                 allImages.add(imageResult);
                                 
                                 // 推送单张配图完成消息
-                                if (streamHandler != null) {
-                                    String message = SseMessageTypeEnum.IMAGE_COMPLETE.getStreamingPrefix() 
-                                            + GsonUtils.toJson(imageResult);
-                                    streamHandler.accept(message);
-                                }
+                                streamPublisher.publish(
+                                        "parallel_image_generator",
+                                        SseMessageTypeEnum.IMAGE_COMPLETE,
+                                        GsonUtils.toJson(imageResult));
                                 
                                 log.info("图片生成成功: imageSource={}, position={}", 
                                         imageSource, req.getPosition());

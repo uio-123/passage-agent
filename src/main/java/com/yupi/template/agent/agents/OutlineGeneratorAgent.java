@@ -1,9 +1,11 @@
 package com.yupi.template.agent.agents;
 
-import org.springframework.ai.openai.OpenAiChatModel;
+import com.yupi.template.agent.llm.AiModelPort;
+import com.yupi.template.agent.state.ArticleWorkflowKeys;
 import com.alibaba.cloud.ai.graph.OverAllState;
 import com.alibaba.cloud.ai.graph.action.NodeAction;
 import com.yupi.template.agent.context.StreamHandlerContext;
+import com.yupi.template.agent.event.AgentStreamEvent;
 import com.yupi.template.constant.PromptConstant;
 import com.yupi.template.model.dto.article.ArticleState;
 import com.yupi.template.model.enums.ArticleStyleEnum;
@@ -11,9 +13,6 @@ import com.yupi.template.model.enums.SseMessageTypeEnum;
 import com.yupi.template.utils.GsonUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.ai.chat.messages.UserMessage;
-import org.springframework.ai.chat.model.ChatResponse;
-import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 
@@ -31,13 +30,13 @@ import java.util.function.Consumer;
 @RequiredArgsConstructor
 public class OutlineGeneratorAgent implements NodeAction {
 
-    private final OpenAiChatModel chatModel;
+    private final AiModelPort aiModel;
 
-    public static final String INPUT_MAIN_TITLE = "mainTitle";
-    public static final String INPUT_SUB_TITLE = "subTitle";
-    public static final String INPUT_USER_DESCRIPTION = "userDescription";
-    public static final String INPUT_STYLE = "style";
-    public static final String OUTPUT_OUTLINE = "outline";
+    public static final String INPUT_MAIN_TITLE = ArticleWorkflowKeys.MAIN_TITLE;
+    public static final String INPUT_SUB_TITLE = ArticleWorkflowKeys.SUB_TITLE;
+    public static final String INPUT_USER_DESCRIPTION = ArticleWorkflowKeys.USER_DESCRIPTION;
+    public static final String INPUT_STYLE = ArticleWorkflowKeys.STYLE;
+    public static final String OUTPUT_OUTLINE = ArticleWorkflowKeys.OUTLINE;
 
     @Override
     public Map<String, Object> apply(OverAllState state) throws Exception {
@@ -74,7 +73,7 @@ public class OutlineGeneratorAgent implements NodeAction {
                 + getStylePrompt(style);
         
         // 获取流式处理器
-        Consumer<String> streamHandler = StreamHandlerContext.get();
+        Consumer<AgentStreamEvent> streamHandler = StreamHandlerContext.get();
         
         // 调用 LLM（流式输出）
         String content = callLlmWithStreaming(prompt, streamHandler);
@@ -94,21 +93,16 @@ public class OutlineGeneratorAgent implements NodeAction {
     /**
      * 调用 LLM（流式输出）
      */
-    private String callLlmWithStreaming(String prompt, Consumer<String> streamHandler) {
+    private String callLlmWithStreaming(String prompt, Consumer<AgentStreamEvent> streamHandler) {
         StringBuilder contentBuilder = new StringBuilder();
         
-        Flux<ChatResponse> streamResponse = chatModel.stream(new Prompt(new UserMessage(prompt)));
+        Flux<String> streamResponse = aiModel.stream(prompt);
         
         streamResponse
-                .doOnNext(response -> {
-                    String chunk = response.getResult().getOutput().getText();
-                    if (chunk != null && !chunk.isEmpty()) {
-                        contentBuilder.append(chunk);
-                        // 带前缀发送流式消息
-                        if (streamHandler != null) {
-                            streamHandler.accept(SseMessageTypeEnum.AGENT2_STREAMING.getStreamingPrefix() + chunk);
-                        }
-                    }
+                .doOnNext(chunk -> {
+                    contentBuilder.append(chunk);
+                    // 带前缀发送流式消息
+                    StreamHandlerContext.send("outline_generator", SseMessageTypeEnum.AGENT2_STREAMING, chunk);
                 })
                 .doOnError(error -> log.error("OutlineGeneratorAgent 流式调用失败", error))
                 .blockLast();

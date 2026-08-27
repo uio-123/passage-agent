@@ -2,6 +2,7 @@ package com.yupi.template.agent.agents;
 
 import com.alibaba.cloud.ai.graph.OverAllState;
 import com.alibaba.cloud.ai.graph.action.NodeAction;
+import com.yupi.template.agent.state.ArticleWorkflowKeys;
 import com.yupi.template.agent.tools.ImageGenerationTool;
 import com.yupi.template.model.dto.article.ArticleState;
 import com.yupi.template.utils.GsonUtils;
@@ -24,9 +25,9 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class ContentMergerAgent implements NodeAction {
 
-    public static final String INPUT_CONTENT = "content";
-    public static final String INPUT_IMAGES = "images";
-    public static final String OUTPUT_FULL_CONTENT = "fullContent";
+    public static final String INPUT_CONTENT = ArticleWorkflowKeys.CONTENT;
+    public static final String INPUT_IMAGES = ArticleWorkflowKeys.IMAGES;
+    public static final String OUTPUT_FULL_CONTENT = ArticleWorkflowKeys.FULL_CONTENT;
 
     @Override
     public Map<String, Object> apply(OverAllState state) throws Exception {

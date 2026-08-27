@@ -1,0 +1,87 @@
+package com.yupi.template.agent.workflow;
+
+import com.yupi.template.agent.ArticleAgentOrchestrator;
+import com.yupi.template.agent.api.WorkflowErrorCode;
+import com.yupi.template.agent.api.WorkflowExecutionException;
+import com.yupi.template.agent.api.WorkflowExecutionResult;
+import com.yupi.template.agent.api.WorkflowStage;
+import com.yupi.template.agent.fixture.ArticleWorkflowFixture;
+import com.yupi.template.agent.run.AgentRunStatus;
+import com.yupi.template.agent.state.WorkflowState;
+import com.yupi.template.agent.state.WorkflowStateReducer;
+import com.yupi.template.model.dto.article.ArticleState;
+import org.junit.jupiter.api.Test;
+
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+class ArticleWorkflowRunnerTest {
+
+    @Test
+    void runsPhasesThroughTypedStateAndPreservesApprovalBoundaries() {
+        ArticleWorkflowRunner runner = new ArticleWorkflowRunner(new DeterministicOrchestrator());
+        WorkflowState initial = ArticleWorkflowFixture.workflowState("run-1", "task-1");
+
+        WorkflowExecutionResult titlesResult = runner.generateTitles(initial, ignored -> { });
+        WorkflowState afterTitles = titlesResult.state();
+        ArticleState.TitleResult selectedTitle = new ArticleState.TitleResult();
+        selectedTitle.setMainTitle("标题");
+        selectedTitle.setSubTitle("副标题");
+        WorkflowState afterSelection = WorkflowStateReducer.withSelectedTitle(afterTitles, selectedTitle);
+        WorkflowState afterOutline = runner.generateOutline(afterSelection, ignored -> { }).state();
+        WorkflowState completed = runner.generateContent(afterOutline, ignored -> { }).state();
+
+        assertThat(afterTitles.run().status()).isEqualTo(AgentRunStatus.WAITING_FOR_APPROVAL);
+        assertThat(titlesResult.stage()).isEqualTo(WorkflowStage.TITLES_GENERATED);
+        assertThat(afterOutline.draft().outline().getSections()).hasSize(1);
+        assertThat(completed.run().status()).isEqualTo(AgentRunStatus.COMPLETED);
+        assertThat(completed.draft().content()).isEqualTo("正文");
+        assertThat(completed.artifacts().fullContent()).isEqualTo("完整正文");
+    }
+
+    @Test
+    void rejectsOutlineGenerationBeforeAUserSelectsATitle() {
+        ArticleWorkflowRunner runner = new ArticleWorkflowRunner(new DeterministicOrchestrator());
+        WorkflowState initial = ArticleWorkflowFixture.workflowState("run-2", "task-2");
+
+        assertThatThrownBy(() -> runner.generateOutline(initial, ignored -> { }))
+                .isInstanceOf(WorkflowExecutionException.class)
+                .extracting(exception -> ((WorkflowExecutionException) exception).error())
+                .satisfies(error -> {
+                    assertThat(error.code()).isEqualTo(WorkflowErrorCode.INVALID_STATE);
+                    assertThat(error.stage()).isEqualTo(WorkflowStage.OUTLINE_GENERATED);
+                    assertThat(error.retryable()).isFalse();
+                });
+    }
+
+    private static final class DeterministicOrchestrator extends ArticleAgentOrchestrator {
+        @Override
+        public void executePhase1_GenerateTitles(ArticleState state, java.util.function.Consumer<String> streamHandler) {
+            ArticleState.TitleOption option = new ArticleState.TitleOption();
+            option.setMainTitle("标题");
+            option.setSubTitle("副标题");
+            state.setTitleOptions(List.of(option));
+        }
+
+        @Override
+        public void executePhase2_GenerateOutline(ArticleState state, java.util.function.Consumer<String> streamHandler) {
+            ArticleState.OutlineSection section = new ArticleState.OutlineSection();
+            section.setSection(1);
+            section.setTitle("章节");
+            section.setPoints(List.of("要点"));
+            ArticleState.OutlineResult outline = new ArticleState.OutlineResult();
+            outline.setSections(List.of(section));
+            state.setOutline(outline);
+        }
+
+        @Override
+        public void executePhase3_GenerateContent(ArticleState state, java.util.function.Consumer<String> streamHandler) {
+            state.setContent("正文");
+            state.setFullContent("完整正文");
+            state.setImageRequirements(List.of());
+            state.setImages(List.of());
+        }
+    }
+}

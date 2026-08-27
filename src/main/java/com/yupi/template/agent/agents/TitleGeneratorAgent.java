@@ -1,18 +1,15 @@
 package com.yupi.template.agent.agents;
 
-import org.springframework.ai.openai.OpenAiChatModel;
+import com.yupi.template.agent.llm.AiModelPort;
+import com.yupi.template.agent.state.ArticleWorkflowKeys;
 import com.alibaba.cloud.ai.graph.OverAllState;
 import com.alibaba.cloud.ai.graph.action.NodeAction;
 import com.google.gson.reflect.TypeToken;
 import com.yupi.template.constant.PromptConstant;
 import com.yupi.template.model.dto.article.ArticleState;
 import com.yupi.template.model.enums.ArticleStyleEnum;
-import com.yupi.template.utils.GsonUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.ai.chat.messages.UserMessage;
-import org.springframework.ai.chat.model.ChatResponse;
-import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -29,11 +26,11 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class TitleGeneratorAgent implements NodeAction {
 
-    private final OpenAiChatModel chatModel;
+    private final AiModelPort aiModel;
 
-    public static final String INPUT_TOPIC = "topic";
-    public static final String INPUT_STYLE = "style";
-    public static final String OUTPUT_TITLE_OPTIONS = "titleOptions";
+    public static final String INPUT_TOPIC = ArticleWorkflowKeys.TOPIC;
+    public static final String INPUT_STYLE = ArticleWorkflowKeys.STYLE;
+    public static final String OUTPUT_TITLE_OPTIONS = ArticleWorkflowKeys.TITLE_OPTIONS;
 
     @Override
     public Map<String, Object> apply(OverAllState state) throws Exception {
@@ -53,14 +50,8 @@ public class TitleGeneratorAgent implements NodeAction {
                 + getStylePrompt(style);
         
         // 调用 LLM
-        ChatResponse response = chatModel.call(new Prompt(new UserMessage(prompt)));
-        String content = response.getResult().getOutput().getText();
-        
-        // 解析结果
-        List<ArticleState.TitleOption> titleOptions = GsonUtils.fromJson(
-                content,
-                new TypeToken<List<ArticleState.TitleOption>>(){}
-        );
+        List<ArticleState.TitleOption> titleOptions = aiModel.completeStructured(
+                prompt, new TypeToken<List<ArticleState.TitleOption>>() {}.getType());
         
         log.info("TitleGeneratorAgent 执行完成: 生成了 {} 个标题方案", titleOptions.size());
         

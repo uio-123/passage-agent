@@ -1,7 +1,7 @@
 # AI Passage 多 Agent 协同创作平台改造计划
 
-> 文档状态：Draft 1.7
-> 更新日期：2026-08-24
+> 文档状态：Draft 1.8
+> 更新日期：2026-08-27
 > 项目目标：参考 DeerFlow 的 Agent Harness 思想，将当前项目从“多个 LLM 节点组成的固定流水线”升级为面向图文内容生产的垂直任务执行系统，使其具备任务规划、层级协作、Skills、受控工具、质量闭环、断点恢复、上下文治理、可验证交付和全链路观测能力，并形成可演示、可量化、适合写入简历的工程项目。
 
 ## 0. 已确认的技术决策
@@ -34,7 +34,7 @@
 - 每次请求重新构建和编译图，三个阶段彼此割裂，缺少可持久化的统一运行状态及断点恢复。
 - 共享状态以字符串键和 `Map<String, Object>` 为主，编译期约束弱，后续扩展容易产生状态冲突。
 - 当前日志能记录耗时和成功/失败，但缺少 trace、节点尝试次数、模型、Token、成本、路由原因和质量分数。
-- 仅有应用启动测试，无法证明多 Agent 路由、并行归并、重试和恢复逻辑可靠。
+- 已有框架级契约测试（图串行/并行/流式、模型端口、Mock HTTP、流事件、Supervisor 调度）；仍缺少业务最小链路、持久化恢复、重试与 Tool 副作用的一致性测试。
 
 因此，本次改造不以“Agent 数量更多”为目标，而以“协作机制可以被代码、测试、界面和指标证明”为标准。
 
@@ -303,37 +303,39 @@ generateStructured(StructuredRequest<T>) -> T
 
 目标：先完成已审查未提交变更的收口，保证 Java 本地开发和 Docker 部署都能使用同一套 LiteLLM 配置稳定运行。
 
+**状态（2026-08-27）：已完成。** Java 21 Enforcer、LiteLLM 普通/流式冒烟、Docker 镜像构建和 Compose 健康检查均已通过。仍应在具备认证会话时补一次标题生成至流式正文的接口级回归；该项不阻塞后续架构开发。
+
 #### 任务 1：确认 Java 单后端边界
 
-- [ ] 保留 `go-backend/` 与 `python-backend/` 的删除，不恢复任何代码。
-- [ ] 检查根目录 Dockerfile、Compose、启动脚本、CI 和 README，确保没有继续引用已删除后端。
-- [ ] 将“项目只维护 Java 后端”写入 README 的技术架构与目录结构说明。
-- [ ] 将大规模目录删除与 LiteLLM 迁移拆为边界清晰、便于审查的提交；除非用户另有要求，不把后续多 Agent 功能混入同一提交。
+- [x] 保留 `go-backend/` 与 `python-backend/` 的删除，不恢复任何代码。
+- [x] 检查根目录 Dockerfile、Compose、启动脚本、CI 和 README，确保没有继续引用已删除后端。
+- [x] 将“项目只维护 Java 后端”写入 README 的技术架构与目录结构说明。
+- [x] 将大规模目录删除与 LiteLLM 迁移拆为边界清晰、便于审查的提交；除非用户另有要求，不把后续多 Agent 功能混入同一提交。
 
 #### 任务 2：统一 LiteLLM 配置
 
-- [ ] 将 `application-local.yml.example` 从 DashScope 配置改为 `spring.ai.openai`，使用 `LITELLM_BASE_URL`、`LITELLM_API_KEY` 和 `LITELLM_MODEL`。
-- [ ] 保持 `application-prod.yml`、`docker-compose.yml` 和本地模板的属性层级、变量名及默认值一致。
-- [ ] 更新 `.env.example`，移除已废弃的 `DASHSCOPE_API_KEY`，增加三项 LiteLLM 配置及注释。
-- [ ] 更新 `start.sh`：校验 LiteLLM 配置，不再阻止未设置 DashScope Key 的用户启动。
-- [ ] 更新 README 的技术栈、API Key、快速开始、Docker 部署和环境变量表，删除 DashScope Starter 的旧说明。
-- [ ] 全仓搜索 `DASHSCOPE`、`dashscope` 和 `DashScopeChatModel`，除迁移说明外不得残留运行时引用。
+- [x] 将 `application-local.yml.example` 从 DashScope 配置改为 `spring.ai.openai`，使用 `LITELLM_BASE_URL`、`LITELLM_API_KEY` 和 `LITELLM_MODEL`。
+- [x] 保持 `application-prod.yml`、`docker-compose.yml` 和本地模板的属性层级、变量名及默认值一致。
+- [x] 更新 `.env.example`，移除已废弃的 `DASHSCOPE_API_KEY`，增加三项 LiteLLM 配置及注释。
+- [x] 更新 `start.sh`：校验 LiteLLM 配置，不再阻止未设置 DashScope Key 的用户启动。
+- [x] 更新 README 的技术栈、API Key、快速开始、Docker 部署和环境变量表，删除 DashScope Starter 的旧说明。
+- [x] 全仓搜索 `DASHSCOPE`、`dashscope` 和 `DashScopeChatModel`，除迁移说明外不得残留运行时引用。
 
 #### 任务 3：修复 Docker 跨平台访问
 
-- [ ] 为 Linux Docker Engine 配置 `host.docker.internal:host-gateway` 映射，保证后端容器可以访问宿主机 LiteLLM。
-- [ ] 允许用户通过 `LITELLM_BASE_URL` 覆盖为远程代理地址；不得把宿主机地址写死在 Java 代码中。
-- [ ] 在 README 区分 Docker Desktop 与 Linux Docker Engine 的网络行为和排障方式。
-- [ ] 使用 `docker compose config --quiet` 验证 Compose 结构，并在 Linux/等价环境验证容器内能解析并访问 LiteLLM。
+- [x] 为 Linux Docker Engine 配置 `host.docker.internal:host-gateway` 映射，保证后端容器可以访问宿主机 LiteLLM。
+- [x] 允许用户通过 `LITELLM_BASE_URL` 覆盖为远程代理地址；不得把宿主机地址写死在 Java 代码中。
+- [x] 在 README 区分 Docker Desktop 与 Linux Docker Engine 的网络行为和排障方式。
+- [x] 使用 `docker compose config --quiet` 验证 Compose 结构，并在 Linux/等价环境验证容器内能解析并访问 LiteLLM。
 
 #### 任务 4：恢复可重复验证链路
 
-- [ ] 明确 JDK 21 为构建前置条件；增加版本检查或 Maven Enforcer，避免使用 JDK 17 时到编译阶段才失败。
-- [ ] 使用 JDK 21 执行 `mvn test`，确认 OpenAI Starter 与 Spring AI Alibaba Agent Framework 的依赖解析及代码编译正常。
-- [ ] 增加不访问真实模型的 Spring Context 测试，验证 `OpenAiChatModel` Bean 能正确装配。
-- [ ] 将验证拆为两类：CI 只运行无真实 Key、无公网依赖的 Fake Model / Mock HTTP / Testcontainers 测试；LiteLLM 冒烟测试作为可显式触发的集成验证，检查代理可达、模型名有效、普通调用和流式调用均成功。
-- [ ] 执行 Docker 镜像构建和 Compose 启动，验证 `/api/health/`、一次标题生成及一次流式正文生成。
-- [ ] 新建或更新 `development_log.md`，记录 Java 单后端收敛、模型接入迁移、验证环境和结果。
+- [x] 明确 JDK 21 为构建前置条件；增加版本检查或 Maven Enforcer，避免使用 JDK 17 时到编译阶段才失败。
+- [x] 使用 JDK 21 执行 `mvn test`，确认 OpenAI Starter 与 Spring AI Alibaba Agent Framework 的依赖解析及代码编译正常。
+- [x] 增加不访问真实模型的 Spring Context 测试，验证 `OpenAiChatModel` Bean 能正确装配。
+- [x] 将验证拆为两类：CI 只运行无真实 Key、无公网依赖的 Fake Model / Mock HTTP / Testcontainers 测试；LiteLLM 冒烟测试作为可显式触发的集成验证，检查代理可达、模型名有效、普通调用和流式调用均成功。
+- [ ] 执行 Docker 镜像构建和 Compose 启动，验证 `/api/health/`、一次标题生成及一次流式正文生成（Docker 健康检查已通过；认证接口级回归待补）。
+- [x] 新建或更新 `development_log.md`，记录 Java 单后端收敛、模型接入迁移、验证环境和结果。
 
 #### 任务 5：框架版本基线与升级预案
 
@@ -355,40 +357,45 @@ generateStructured(StructuredRequest<T>) -> T
 
 ### P0-U：框架升级最小验证（P0-A 后、P0-B 前）
 
-目标：在大规模迁移 Graph、Supervisor 和业务 Agent 前，先验证 `Spring AI Alibaba 1.1.2.2 + Spring AI 1.1.2` 是否适合当前 Java / LiteLLM 技术栈，避免在 RC2 上开发后再经历第二次迁移。
+目标：确认 `Spring AI Alibaba 1.1.2.2 + Spring AI 1.1.2` 可作为当前 Java / LiteLLM 的开发基线。版本冻结只验证已经使用或将立即使用的 API 边界；Skill、Policy Gateway 和完整 checkpoint 属于 P1/P2 业务交付，不作为冻结的前置条件。
 
-- [ ] 用独立、可回滚的提交升级候选依赖，并记录实际解析出的 Maven 依赖树。
-- [ ] 配置并执行 Maven 依赖收敛/重复版本检查，确认 Spring AI OpenAI Starter、Spring AI 核心和 Alibaba Agent Framework 最终解析为预期版本，不被直接或传递依赖降回 `1.1.0`。
-- [ ] 使用最小样例和 Fake Model 验证：普通/流式/结构化调用、`streamMessages`、Supervisor/Routing、Skills 渐进加载、异步 Tool / `returnDirect`、并行条件边、`allOf`/`anyOf`、中断与恢复。
-- [ ] 使用 Mock HTTP 或测试 LiteLLM 环境验证 OpenAI 兼容适配；不把真实模型输出作为 CI 断言依据。
-- [ ] 迁移现有标题—大纲—正文最小链路并执行回归；若候选版本未通过，保留 RC2 基线和失败记录。此时 P0-B 只能推进框架无关的 `AiModelPort`、DTO、Fixture、持久化契约和测试基座，不得在 RC2 上新增依赖 `1.1.2.2` 特性的 Supervisor、Skills 或并行边实现，直至作出明确版本决策。
+**结论（2026-08-27）：冻结 `Spring AI Alibaba 1.1.2.2 + Spring AI 1.1.2` 作为 P0-B 的开发基线。** 已通过依赖树、Java 21、真实 LiteLLM 普通/流式冒烟、StateGraph 串行/并行/流式契约、`AiModelPort`、OpenAI Mock HTTP、内部流事件 DTO、Supervisor 路由/受限并发 Fixture、三阶段 Fake Model 业务回归、图片部分失败稳定归并，以及 MemorySaver checkpoint/interruption-resume 隔离样例。
 
-验收：候选版本的依赖、最小链路和框架适配契约均可重复执行；升级结论、已知差异和回滚方式记录在 `development_log.md`。
+完整持久化、幂等、取消传播和“Tool 已执行但 checkpoint 未提交”一致性仍在 P1 验收；外部 Tool 的超时、重试、预算和审计由 P2 Policy Gateway 统一实现，不能由当前并行图片节点的局部实现替代。
 
 ### P0-B：Agent 基线整理与可验证骨架（优先级：最高）
 
 目标：先解决架构边界、状态契约和测试基础，让后续能力可持续演进。
 
+执行顺序、每项验收、回滚与阶段门禁见 `p0-b_execution_plan.md`；该阶段文档经当前实现与测试状态校验后执行。进入 P1 前另行生成并校验 P1 专用执行文档。
+
 - [ ] 记录当前主链路的功能、耗时、模型调用次数和已知失败点，建立改造基线。
 - [ ] 以已确认的 Spring Boot 单后端作为开发基线，不恢复或维护 Go/Python 实现。
-- [ ] 新建 Agent API、typed state、结果 DTO、错误模型、Reducer 和统一事件协议。
-- [ ] 建立 `AgentRun`、`SubTaskSpec`、`ContextSnapshot` 和 `ArtifactManifest` 核心契约，明确父子关系与任务状态机。
-- [ ] 将 StateGraph 在启动期构建并复用，消除每次请求重复编译。
-- [ ] 将现有标题—大纲—正文—配图能力迁移到统一图，保证现有 API 行为兼容。
+- [x] 新建框架无关的 typed `WorkflowState` 与 `WorkflowStateReducer`，覆盖文章输入、草稿和交付物的不可变状态转换。
+- [x] 新建项目自有 `WorkflowRunner` API 与 `ArticleWorkflowRunner` 过渡实现，调用方不再接触 `StateGraph` 类型，并保留标题/大纲审批边界。
+- [x] 补齐项目自有结果 DTO 与错误模型：`WorkflowExecutionResult` 标明完成阶段，`WorkflowError` / `WorkflowExecutionException` 提供可持久化、可分类的失败信息，不泄漏框架异常类型。
+- [x] 将现有 StateGraph 的字符串状态键集中到 `ArticleWorkflowKeys` 过渡边界；统一图完成后移除该 `Map<String, Object>` 适配层。
+- [x] 建立框架无关的 `AgentRun` 身份与状态机契约，明确 root/parent 关系、审批/暂停和终态不可回退规则。
+- [x] 建立 `AgentSubtask`、`ContextSnapshot` 和 `ArtifactManifest` 核心契约，并将其与 `AgentRun` 关联；后续将其持久化并接入 Supervisor/交付流程。
+- [x] 新增 `agent_run` 持久化表和根 Run 创建服务；文章任务创建与根 Run 创建位于同一事务，既有 `article` / `agent_log` 表保持不变。
+- [x] 将现有三阶段 `StateGraph` 在 Spring Bean 初始化期编译并复用；无 Spring 的契约测试通过线程安全懒加载保持可运行。
+- [x] 在编排器启用路径下，将现有标题—大纲—正文—配图阶段迁移到 `WorkflowRunner` 统一入口，保持既有 API 与 SSE 协议；统一单图与启动期复用仍待后续迁移。
 - [ ] 引入 Fake ChatModel/Tool，补齐图拓扑、节点契约和旧功能回归测试。
-- [ ] 建立测试数据基座：固定创作任务、Fake Model 响应、网页抓取回放、来源样本与期望 Artifact；开发回归集和最终评测集分开维护。
-- [ ] 实现 `AiModelPort`、请求/响应 DTO、`SpringAiModelAdapter` 和 Fake 实现；迁移 Agent、服务、Skill、评审器对 `OpenAiChatModel` 的直接依赖。
-- [ ] 将 `StateGraph`、`CompiledGraph`、`OverAllState` 等框架类型限制在 `agent/graph`；对其余模块暴露项目自有 `WorkflowRunner`、`WorkflowContext` 和 `RunResult`。
+- [x] 建立 P0-B 核心测试数据基座：固定创作任务、typed state、确定性 Fake Model 响应及图片部分失败样本已集中到 `ArticleWorkflowFixture`。
+- [ ] 在 P2 Research 落地后扩展网页抓取回放、来源样本与期望 Artifact；开发回归集和最终评测集分开维护，不能伪造来源数据。
+- [x] 已实现 `AiModelPort`、`SpringAiModelAdapter`、Fake/Mock 契约和框架无关的流事件 DTO；P0-B 继续将剩余调用方迁移到该边界。
+- [x] 对调用方暴露项目自有 `WorkflowRunner`；现有框架类型仍在过渡编排器中，待统一图落地后迁移到 `agent/graph` 并补齐 `WorkflowContext` / `RunResult`。
 - [ ] 为普通生成、流式生成、结构化输出、工具调用和图执行补充最小契约测试。
 - [ ] 建立 `development_log.md`，记录后续关键设计和实测数据。
 
-验收：现有创作流程通过统一图运行；核心测试不依赖外部 API；README 中现有功能没有回归。
+验收：现有创作流程通过统一图运行；核心测试不依赖外部 API；运行起点、强类型状态、事件与产物的边界明确；README 中现有功能没有回归。Token、模型、路由、重试与耗时字段在本阶段开始采集，P4 只负责展示。
 
 ### P1：Supervisor、动态路由与断点恢复（优先级：最高）
 
 目标：从固定流水线升级为真正由状态和决策驱动的 Agent 工作流。
 
 - [ ] 实现 Supervisor Agent 和结构化 `ExecutionPlan/SubTaskSpec`，每个子任务声明依赖、预算、Tool 权限、预期 Artifact 和验收条件。
+- [x] 已完成框架无关的 `SupervisorPlan` / `SubtaskSpec` / `SupervisorScheduler` Fixture，验证研究路由、受限并发和稳定归并；尚未接入业务图，不等同于完成业务 Supervisor。
 - [ ] 优先采用 Spring AI Alibaba `Supervisor` / `LlmRouting` 的原生并行子 Agent、条件路由与聚合能力，不重复实现框架级 Agent 调度。
 - [ ] 实现项目层轻量 Scheduler：只负责为框架执行映射 `childRunId` / `parentRunId`，以及持久化依赖、预算、取消传播、幂等和审计；不承担 LLM 路由或节点并发编排。
 - [ ] 增加“研究/跳过研究”“配图/跳过配图”“发布/返工”条件边。
@@ -399,7 +406,7 @@ generateStructured(StructuredRequest<T>) -> T
 - [ ] 使用 Testcontainers 补充 checkpoint、父子 Run 与事件持久化测试；覆盖同一 `runId` 重复提交、节点重复执行、取消与 fan-out 并发、恢复与重试并发、Tool 已执行但 checkpoint 未提交等一致性场景。
 - [ ] 将并发恢复不变量固化为断言：同一幂等键最多产生一次有效外部副作用；同一 checkpoint 仅允许一个恢复者推进；运行终态不可回退；Artifact、上传和扣费/配额记录不得重复生成。
 
-验收：服务重启或用户离开页面后，可以从最近检查点继续；至少三种条件路由有可重复测试证据；任一子 Agent 执行可追溯到父任务、输入契约、预算和交付物。
+验收：服务重启或用户离开页面后，可以从最近检查点继续且不重复调用已成功 Tool 或扣减配额；至少三种条件路由有可重复测试证据；任一子 Agent 执行可追溯到父任务、输入契约、预算和交付物。
 
 ### P2：Skills、受控工具与可追溯内容（优先级：高）
 
@@ -593,27 +600,25 @@ GET    /api/skills                        查询可用内置 Skills 及版本
 
 ## 11. 下一步执行顺序
 
-1. 执行 P0-A：保留 Go/Python 删除，完成 LiteLLM 配置、启动脚本、Docker 网络和 README 的一致性修复。
-2. 使用 JDK 21 完成 Maven 测试、Docker 构建、健康检查及 LiteLLM 普通/流式调用验证，固化版本矩阵和 CI/真实冒烟的分层方式。
-3. 执行 P0-U：单独验证 Spring AI Alibaba `1.1.2.2` + Spring AI `1.1.2`，通过后冻结版本；未通过则记录差异并保留 RC2 基线。
-4. 为 P0-B 输出详细设计并先交付 Fake Model、Fixture、Mock HTTP 与框架适配契约测试，再迁移统一 StateGraph，避免在真实模型调用上调试编排逻辑。
-5. 完成 P1 的 Supervisor + Scheduler + checkpoint 及持久化/恢复一致性测试后，做第一次父子任务可恢复流程演示。
-6. 进入 P2/P3，随功能交付 Tool/来源/安全、并行归并和质量门禁测试，再交付内置 Skills、受控工具、研究引用、并行章节写作、评审返工与 Artifact Manifest。
-7. 最后执行 P4/P5 的 SSE 可观测测试、离线评测扩容、压测和 CI 收口，形成可复查的简历数据。
+1. 执行 P0-B：先设计并落地统一运行起点、强类型状态、`AgentRun` 状态机和事件/指标采集，再迁移现有主链路。
+2. 执行 P1：将现有 Scheduler Fixture 接入真实 Supervisor，完成条件路由、HITL、checkpoint、持久化和幂等恢复测试。
+3. 执行 P2：交付 Research、来源模型、Skill Registry 和 Policy Gateway；先让事实核查有可追溯证据。
+4. 执行 P3：完成章节 fan-out/fan-in、Reviewer、局部返工和 Artifact Manifest，并产出串行/并行的性能与成本对比。
+5. 执行 P4/P5：将已采集的运行数据用于 UI、评测、压测和 CI 收口，形成可复查的演示与简历数据。
 
 ## 12. 设计参考与使用边界
 
-- 本计划的 Agent Harness、Lead/子 Agent、Skills、Policy、上下文分层、Artifact 和 tracing 思路参考仓库内的 [DeerFlow 参考架构与 Agent 项目设计](./DeerFlow_参考架构与Agent项目设计.md)。
+- 本计划的 Agent Harness、Lead/子 Agent、Skills、Policy、上下文分层、Artifact 和 tracing 思路参考仓库内的 [DeerFlow 参考架构与 Agent 项目设计](deerflow_reference.md)。
 - 参考文档用于提炼设计原则，不代表本项目需要复制 DeerFlow 的语言、部署形态或全部基础设施。
 - 实施时以当前 Java/Spring Boot/Spring AI Alibaba 架构和图文创作场景为约束；新增抽象必须由实际用例、测试或观测数据证明价值。
 
-## 13. 当前执行方案：P0-A + P0-U
+## 13. 当前执行方案：P0-B 准备
 
-本节是当前唯一需要展开实施的滚动执行清单。P1–P5 保持路线图状态，待 Java 运行基线和框架版本结论确定后再细化，避免在 RC2 与 `1.1.2.2` 的实际 API 差异未验证前锁死实现。
+P0-A 与 P0-U 已完成，候选依赖已冻结为当前开发基线。本节保留 P0-U 的可追溯证据；下一轮应为 P0-B 输出统一运行状态与迁移设计，不直接跳入业务 Supervisor 或 Skills。
 
 ### 13.1 目标、范围与提交边界
 
-**本轮目标**：建立 Java 单后端 + LiteLLM 的可重复运行闭环，并完成 Spring AI Alibaba `1.1.2.2` 候选升级的最小兼容性验证。
+**本轮结果**：已完成 Spring AI Alibaba `1.1.2.2` 候选升级的最小业务回归、图片部分失败边界和 checkpoint API 隔离验证，版本矩阵已冻结。
 
 **不在本轮范围内**：统一业务 StateGraph、持久化 Agent Run、Supervisor 业务逻辑、Skill Registry、数据库迁移和前端 DAG。这些内容必须等待 P0-U 给出版本结论。
 
@@ -622,7 +627,7 @@ GET    /api/skills                        查询可用内置 Skills 及版本
 | `3d315c4` | 删除 Go/Python 后端 | 已完成，本轮不修改或恢复 |
 | `495c859` | 项目规范、参考架构与计划 | 已完成，随执行进展维护 `plan.md` / `development_log.md` |
 | P0-A 功能提交 | LiteLLM 配置、脚本、Docker、文档、Java 21 验证 | 已通过 JDK 21 门禁、离线 OpenAI 客户端装配测试、真实 LiteLLM 普通/流式冒烟、Docker 镜像构建和 Compose 健康检查；接口级标题/正文链路待具备可用登录会话后补测 |
-| P0-U 验证提交 | `1.1.2.2 + 1.1.2` 依赖升级、最小样例和兼容性报告 | 候选依赖树已确认无旧版回落，且已通过 Java 21、OpenAI 客户端、真实代理及 StateGraph 串行/并行/流式最小契约；`framework-compatibility.md` 已记录“暂不冻结”。仍需在项目实现对应边界后验证 Tool/checkpoint/Supervisor/Skill 契约 |
+| P0-U 验证提交 | `1.1.2.2 + 1.1.2` 依赖升级、最小样例和兼容性报告 | 已冻结：依赖树、Java 21、真实代理、StateGraph、模型端口、流事件、Supervisor Fixture、业务最小链路、图片部分失败稳定归并与 checkpoint resume 均已验证 |
 
 ### 13.2 P0-A 执行清单：Java + LiteLLM 运行闭环
 
@@ -672,28 +677,27 @@ GET    /api/skills                        查询可用内置 Skills 及版本
 
 按以下顺序实现并测试，每一步失败都先记录差异，禁止用大量业务代码掩盖框架问题：
 
-1. `AiModelPort` 的普通、流式、结构化调用，与 OpenAI 兼容 Mock HTTP 适配。
-2. `streamMessages` 到项目内部事件 DTO 的映射，不向前端暴露框架事件类型。
-3. Supervisor / Routing 的单子 Agent 和并行子 Agent；验证路由结果、最大并发和稳定输出归并。
-4. `ReactAgent` 的 Skill 渐进加载；验证未加载 Skill 正文时的上下文边界及项目 Registry 的权限校验。
-5. 异步/并行只读 Tool、`returnDirect` 拒绝越过 Policy Gateway 的行为。
-6. 并行条件边及 `allOf` / `anyOf` 聚合；明确部分失败、超时、取消和稳定排序行为。
-7. interrupt/checkpoint/resume；验证恢复后不重复执行 Tool、生成 Artifact 或扣减配额。
-8. 将当前标题—大纲—正文串行最小链路迁移到候选依赖并执行旧 API 回归。
+1. `AiModelPort` 的普通、流式、结构化调用，与 OpenAI 兼容 Mock HTTP 适配。**已完成：** Fake 契约和本地 Mock HTTP 覆盖普通 JSON、SSE 分片及 400 协议错误；测试中的重试策略显式限制为一次。
+2. `streamMessages` 到项目内部事件 DTO 的映射，不向前端暴露框架事件类型。**已完成：** 内部 `AgentStreamEvent` 携带任务、节点、序号、事件类型和文本增量；仅在 SSE 边界映射回现有字符串协议。
+3. Supervisor / Routing 的单子 Agent 和并行子 Agent；验证路由结果、最大并发和稳定输出归并。**已完成最小 Fixture：** 强类型计划驱动研究/写作路由，受限并发 Writer 调度和按章节序号稳定归并；尚未接入业务主图。
+4. 将当前标题—大纲—正文串行最小链路接入 Fake Model 并执行既有 SSE/API 回归。**已完成：** `ArticleCreationWorkflowContractTest` 覆盖三阶段真实 StateGraph 节点、标题结构化输出、大纲/正文流式 SSE 兼容，以及空配图时的图文合成；不启动 Spring 或访问外部服务。
+5. 为图片 Tool 建立部分失败、并发异常传播与稳定排序的最小契约。**已完成：** `ParallelImageGeneratorContractTest` 证明单任务失败不阻断成功兄弟任务，结果按文章位置稳定排序，异步事件可继续发布。超时、重试与预算统一留待 P2 Policy Gateway。
+6. 仅验证 interrupt/checkpoint API 是否可隔离使用。**已完成：** `CheckpointCompatibilityTest` 使用 `MemorySaver` 在节点后中断，并从快照的 `RunnableConfig` 恢复下一个节点、不重跑已完成节点。恢复后不重复 Tool、Artifact 或扣费的完整保证在 P1 的持久化实现中验证。
+7. `ReactAgent` Skill 渐进加载、Policy Gateway、异步 Tool/`returnDirect`、条件边聚合属于 P2/P3 的交付，不能作为本轮版本冻结的前置条件。
 
-**通过门禁**：上述契约在 Fake/Mock 环境通过；候选依赖下 Java 21 的 `mvn test` 通过；真实 LiteLLM 冒烟通过；升级差异、已知限制和回滚方式已记录。
+**通过门禁（已满足）：** 上述最小业务、Tool 和 checkpoint API 契约在 Fake/Mock 环境通过；候选依赖下 Java 21 的 `mvn test` 通过；真实 LiteLLM 冒烟通过；升级差异、已知限制和回滚方式已记录。
 
 #### U3：版本决策
 
 | 结果 | 后续动作 |
 |---|---|
-| 全部门禁通过 | 提交并冻结 `1.1.2.2 + 1.1.2` 版本矩阵，P0-B 基于该组合进入图编排改造 |
+| 全部门禁通过（当前） | 冻结 `1.1.2.2 + 1.1.2` 版本矩阵，P0-B 基于该组合进入图编排改造 |
 | 仅局部 API 差异 | 评估是否可由 `agent/graph` 适配层隔离；修复后重新执行 U2，不将临时兼容代码泄漏到业务 Agent |
 | 核心能力或稳定性未通过 | 回滚候选提交，保留 RC2 和失败记录；P0-B 仅推进 `AiModelPort`、DTO、Fixture、持久化契约与测试基座，等待新的版本决策 |
 
 ### 13.4 本轮完成定义
 
-只有同时满足以下条件，才可以进入 P0-B 的实际图改造：
+以下条件已满足，可以进入 P0-B 的实际图改造：
 
 - P0-A 配置、脚本、Compose 与 README 已一致，Java 21 构建和 Docker 健康检查通过。
 - CI 测试不依赖真实模型；真实 LiteLLM 冒烟具备显式触发方式且至少成功一次。

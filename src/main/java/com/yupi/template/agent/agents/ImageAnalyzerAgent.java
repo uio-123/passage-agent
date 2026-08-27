@@ -1,18 +1,14 @@
 package com.yupi.template.agent.agents;
 
-import org.springframework.ai.openai.OpenAiChatModel;
+import com.yupi.template.agent.llm.AiModelPort;
+import com.yupi.template.agent.state.ArticleWorkflowKeys;
 import com.alibaba.cloud.ai.graph.OverAllState;
 import com.alibaba.cloud.ai.graph.action.NodeAction;
-import com.google.gson.reflect.TypeToken;
 import com.yupi.template.constant.PromptConstant;
 import com.yupi.template.model.dto.article.ArticleState;
 import com.yupi.template.model.enums.ImageMethodEnum;
-import com.yupi.template.utils.GsonUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.ai.chat.messages.UserMessage;
-import org.springframework.ai.chat.model.ChatResponse;
-import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -30,13 +26,13 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class ImageAnalyzerAgent implements NodeAction {
 
-    private final OpenAiChatModel chatModel;
+    private final AiModelPort aiModel;
 
-    public static final String INPUT_MAIN_TITLE = "mainTitle";
-    public static final String INPUT_CONTENT = "content";
-    public static final String INPUT_ENABLED_IMAGE_METHODS = "enabledImageMethods";
-    public static final String OUTPUT_CONTENT_WITH_PLACEHOLDERS = "contentWithPlaceholders";
-    public static final String OUTPUT_IMAGE_REQUIREMENTS = "imageRequirements";
+    public static final String INPUT_MAIN_TITLE = ArticleWorkflowKeys.MAIN_TITLE;
+    public static final String INPUT_CONTENT = ArticleWorkflowKeys.CONTENT;
+    public static final String INPUT_ENABLED_IMAGE_METHODS = ArticleWorkflowKeys.ENABLED_IMAGE_METHODS;
+    public static final String OUTPUT_CONTENT_WITH_PLACEHOLDERS = ArticleWorkflowKeys.CONTENT_WITH_PLACEHOLDERS;
+    public static final String OUTPUT_IMAGE_REQUIREMENTS = ArticleWorkflowKeys.IMAGE_REQUIREMENTS;
 
     @Override
     public Map<String, Object> apply(OverAllState state) throws Exception {
@@ -73,14 +69,8 @@ public class ImageAnalyzerAgent implements NodeAction {
                 .replace("{methodUsageGuide}", methodUsageGuide);
         
         // 调用 LLM
-        ChatResponse response = chatModel.call(new Prompt(new UserMessage(prompt)));
-        String responseContent = response.getResult().getOutput().getText();
-        
-        // 解析结果（新格式：包含 contentWithPlaceholders 和 imageRequirements）
-        ArticleState.Agent4Result agent4Result = GsonUtils.fromJson(
-                responseContent,
-                ArticleState.Agent4Result.class
-        );
+        ArticleState.Agent4Result agent4Result = aiModel.completeStructured(
+                prompt, ArticleState.Agent4Result.class);
         
         // 验证并过滤配图需求
         List<ArticleState.ImageRequirement> validatedRequirements = validateAndFilterImageRequirements(

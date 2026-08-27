@@ -140,6 +140,8 @@ AI 爆款文章创作器是一个基于 **Spring AI Alibaba** 构建的智能图
 
 ```bash
 mysql -uroot -p < sql/create_table.sql
+# Existing databases also need the Agent run persistence migration:
+mysql -uroot -p < sql/add_agent_run_tables.sql
 ```
 
 ### 2. 配置 API Key
@@ -346,6 +348,7 @@ docker compose down -v
 │   └── package.json
 ├── sql/                             # 数据库脚本
 │   ├── create_table.sql             # 建表语句
+│   ├── add_agent_run_tables.sql      # Agent 运行记录迁移
 │   ├── init_database.sql            # 初始化数据
 │   └── ...                          # 增量更新脚本
 ├── docker-compose.yml               # Docker 编排
@@ -378,7 +381,7 @@ enabledImageMethods  -- 允许的配图方式（JSON 数组）
 
 | 服务 | 获取地址 | 说明 |
 |------|---------|------|
-| 通义千问 | https://bailian.console.aliyun.com | 必需 |
+| LiteLLM 代理及其配置的模型提供方 | 按部署环境配置 | 必需；使用 `LITELLM_BASE_URL`、`LITELLM_API_KEY`、`LITELLM_MODEL` |
 | Pexels | https://www.pexels.com/api/ | 必需 |
 | Stripe | https://dashboard.stripe.com | 支付功能 |
 | 腾讯云 COS | https://console.cloud.tencent.com | 图片上传 |
@@ -468,9 +471,9 @@ public class NewMethodService implements ImageSearchService {
 
 ## 📖 相关文档
 
-- [VIP 功能说明](VIP_FEATURES.md) - VIP 会员权益介绍
-- [Stripe 支付配置](STRIPE_SETUP.md) - 支付功能配置指南
-- [项目架构概览](PROJECT_OVERVIEW.md) - 详细技术架构文档
+- [文档索引](docs/README.md) - 开发计划、执行文档、兼容性记录与业务说明
+- [VIP 功能说明](docs/vip_features.md) - VIP 会员权益介绍
+- [Stripe 支付配置](docs/stripe_setup.md) - 支付功能配置指南
 
 ## 👨‍💻 作者
 

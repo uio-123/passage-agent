@@ -6,12 +6,15 @@ import com.alibaba.cloud.ai.graph.state.strategy.ReplaceStrategy;
 import com.yupi.template.agent.agents.*;
 import com.yupi.template.agent.config.AgentConfig;
 import com.yupi.template.agent.context.StreamHandlerContext;
+import com.yupi.template.agent.event.AgentStreamEventMapper;
 import com.yupi.template.agent.parallel.ParallelImageGenerator;
+import com.yupi.template.agent.state.ArticleWorkflowKeys;
 import com.yupi.template.model.dto.article.ArticleState;
 import com.yupi.template.model.enums.SseMessageTypeEnum;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
 import java.util.HashMap;
 import java.util.List;
@@ -54,24 +57,23 @@ public class ArticleAgentOrchestrator {
     @Resource
     private ContentMergerAgent contentMergerAgent;
 
-    // region 状态键常量
+    private volatile CompiledGraph phase1CompiledGraph;
 
-    private static final String KEY_TASK_ID = "taskId";
-    private static final String KEY_TOPIC = "topic";
-    private static final String KEY_STYLE = "style";
-    private static final String KEY_USER_DESCRIPTION = "userDescription";
-    private static final String KEY_MAIN_TITLE = "mainTitle";
-    private static final String KEY_SUB_TITLE = "subTitle";
-    private static final String KEY_TITLE_OPTIONS = "titleOptions";
-    private static final String KEY_OUTLINE = "outline";
-    private static final String KEY_CONTENT = "content";
-    private static final String KEY_CONTENT_WITH_PLACEHOLDERS = "contentWithPlaceholders";
-    private static final String KEY_IMAGE_REQUIREMENTS = "imageRequirements";
-    private static final String KEY_IMAGES = "images";
-    private static final String KEY_FULL_CONTENT = "fullContent";
-    private static final String KEY_ENABLED_IMAGE_METHODS = "enabledImageMethods";
+    private volatile CompiledGraph phase2CompiledGraph;
 
-    // endregion
+    private volatile CompiledGraph phase3CompiledGraph;
+
+    /** Compile immutable graph topology once for the Spring-managed production bean. */
+    @PostConstruct
+    void initializeCompiledGraphs() {
+        try {
+            phase1CompiledGraph = buildPhase1Graph().compile();
+            phase2CompiledGraph = buildPhase2Graph().compile();
+            phase3CompiledGraph = buildPhase3Graph().compile();
+        } catch (GraphStateException e) {
+            throw new IllegalStateException("文章智能体图初始化失败", e);
+        }
+    }
 
     /**
      * 阶段1：生成标题方案
@@ -85,13 +87,12 @@ public class ArticleAgentOrchestrator {
         try {
             // 构建输入状态
             Map<String, Object> inputs = new HashMap<>();
-            inputs.put(KEY_TASK_ID, state.getTaskId());
-            inputs.put(KEY_TOPIC, state.getTopic());
-            inputs.put(KEY_STYLE, state.getStyle());
+            inputs.put(ArticleWorkflowKeys.TASK_ID, state.getTaskId());
+            inputs.put(ArticleWorkflowKeys.TOPIC, state.getTopic());
+            inputs.put(ArticleWorkflowKeys.STYLE, state.getStyle());
             
             // 构建并执行图
-            StateGraph graph = buildPhase1Graph();
-            CompiledGraph compiledGraph = graph.compile();
+            CompiledGraph compiledGraph = phase1CompiledGraph();
             
             Optional<OverAllState> result = compiledGraph.invoke(inputs);
             
@@ -99,7 +100,7 @@ public class ArticleAgentOrchestrator {
                 OverAllState finalState = result.get();
                 
                 @SuppressWarnings("unchecked")
-                List<ArticleState.TitleOption> titleOptions = finalState.value(KEY_TITLE_OPTIONS)
+                List<ArticleState.TitleOption> titleOptions = finalState.value(ArticleWorkflowKeys.TITLE_OPTIONS)
                         .map(v -> (List<ArticleState.TitleOption>) v)
                         .orElse(null);
                 
@@ -130,27 +131,27 @@ public class ArticleAgentOrchestrator {
         log.info("阶段2（多智能体编排）：开始生成大纲, taskId={}", state.getTaskId());
         
         // 设置流式处理器到 ThreadLocal
-        StreamHandlerContext.set(streamHandler);
+        StreamHandlerContext.set(state.getTaskId(), event ->
+                streamHandler.accept(AgentStreamEventMapper.toLegacyMessage(event)));
         
         try {
             // 构建输入状态
             Map<String, Object> inputs = new HashMap<>();
-            inputs.put(KEY_TASK_ID, state.getTaskId());
-            inputs.put(KEY_MAIN_TITLE, state.getTitle().getMainTitle());
-            inputs.put(KEY_SUB_TITLE, state.getTitle().getSubTitle());
-            inputs.put(KEY_USER_DESCRIPTION, state.getUserDescription());
-            inputs.put(KEY_STYLE, state.getStyle());
+            inputs.put(ArticleWorkflowKeys.TASK_ID, state.getTaskId());
+            inputs.put(ArticleWorkflowKeys.MAIN_TITLE, state.getTitle().getMainTitle());
+            inputs.put(ArticleWorkflowKeys.SUB_TITLE, state.getTitle().getSubTitle());
+            inputs.put(ArticleWorkflowKeys.USER_DESCRIPTION, state.getUserDescription());
+            inputs.put(ArticleWorkflowKeys.STYLE, state.getStyle());
             
             // 构建并执行图
-            StateGraph graph = buildPhase2Graph();
-            CompiledGraph compiledGraph = graph.compile();
+            CompiledGraph compiledGraph = phase2CompiledGraph();
             
             Optional<OverAllState> result = compiledGraph.invoke(inputs);
             
             if (result.isPresent()) {
                 OverAllState finalState = result.get();
                 
-                ArticleState.OutlineResult outline = finalState.value(KEY_OUTLINE)
+                ArticleState.OutlineResult outline = finalState.value(ArticleWorkflowKeys.OUTLINE)
                         .map(v -> {
                             if (v instanceof ArticleState.OutlineResult) {
                                 return (ArticleState.OutlineResult) v;
@@ -189,21 +190,21 @@ public class ArticleAgentOrchestrator {
         log.info("阶段3（多智能体编排）：开始生成正文+配图, taskId={}", state.getTaskId());
         
         // 设置流式处理器到 ThreadLocal
-        StreamHandlerContext.set(streamHandler);
+        StreamHandlerContext.set(state.getTaskId(), event ->
+                streamHandler.accept(AgentStreamEventMapper.toLegacyMessage(event)));
         
         try {
             // 构建输入状态（不再包含 streamHandler，避免序列化问题）
             Map<String, Object> inputs = new HashMap<>();
-            inputs.put(KEY_TASK_ID, state.getTaskId());
-            inputs.put(KEY_MAIN_TITLE, state.getTitle().getMainTitle());
-            inputs.put(KEY_SUB_TITLE, state.getTitle().getSubTitle());
-            inputs.put(KEY_OUTLINE, state.getOutline());
-            inputs.put(KEY_STYLE, state.getStyle());
-            inputs.put(KEY_ENABLED_IMAGE_METHODS, state.getEnabledImageMethods());
+            inputs.put(ArticleWorkflowKeys.TASK_ID, state.getTaskId());
+            inputs.put(ArticleWorkflowKeys.MAIN_TITLE, state.getTitle().getMainTitle());
+            inputs.put(ArticleWorkflowKeys.SUB_TITLE, state.getTitle().getSubTitle());
+            inputs.put(ArticleWorkflowKeys.OUTLINE, state.getOutline());
+            inputs.put(ArticleWorkflowKeys.STYLE, state.getStyle());
+            inputs.put(ArticleWorkflowKeys.ENABLED_IMAGE_METHODS, state.getEnabledImageMethods());
             
             // 构建并执行图
-            StateGraph graph = buildPhase3Graph();
-            CompiledGraph compiledGraph = graph.compile();
+            CompiledGraph compiledGraph = phase3CompiledGraph();
             
             Optional<OverAllState> result = compiledGraph.invoke(inputs);
             
@@ -211,29 +212,29 @@ public class ArticleAgentOrchestrator {
                 OverAllState finalState = result.get();
                 
                 // 提取带占位符的正文（优先使用，如果存在）
-                String contentWithPlaceholders = finalState.value(KEY_CONTENT_WITH_PLACEHOLDERS)
+                String contentWithPlaceholders = finalState.value(ArticleWorkflowKeys.CONTENT_WITH_PLACEHOLDERS)
                         .map(Object::toString)
                         .orElse(null);
                 
                 // 提取原始正文（作为备用）
-                String content = finalState.value(KEY_CONTENT)
+                String content = finalState.value(ArticleWorkflowKeys.CONTENT)
                         .map(Object::toString)
                         .orElse(null);
                 
                 // 提取配图需求
                 @SuppressWarnings("unchecked")
-                List<ArticleState.ImageRequirement> imageRequirements = finalState.value(KEY_IMAGE_REQUIREMENTS)
+                List<ArticleState.ImageRequirement> imageRequirements = finalState.value(ArticleWorkflowKeys.IMAGE_REQUIREMENTS)
                         .map(v -> (List<ArticleState.ImageRequirement>) v)
                         .orElse(null);
                 
                 // 提取图片结果
                 @SuppressWarnings("unchecked")
-                List<ArticleState.ImageResult> images = finalState.value(KEY_IMAGES)
+                List<ArticleState.ImageResult> images = finalState.value(ArticleWorkflowKeys.IMAGES)
                         .map(v -> (List<ArticleState.ImageResult>) v)
                         .orElse(null);
                 
                 // 提取完整内容
-                String fullContent = finalState.value(KEY_FULL_CONTENT)
+                String fullContent = finalState.value(ArticleWorkflowKeys.FULL_CONTENT)
                         .map(Object::toString)
                         .orElse(null);
                 
@@ -324,6 +325,39 @@ public class ArticleAgentOrchestrator {
                 .addEdge("content_merger", END);
     }
 
+    private CompiledGraph phase1CompiledGraph() throws GraphStateException {
+        if (phase1CompiledGraph == null) {
+            synchronized (this) {
+                if (phase1CompiledGraph == null) {
+                    phase1CompiledGraph = buildPhase1Graph().compile();
+                }
+            }
+        }
+        return phase1CompiledGraph;
+    }
+
+    private CompiledGraph phase2CompiledGraph() throws GraphStateException {
+        if (phase2CompiledGraph == null) {
+            synchronized (this) {
+                if (phase2CompiledGraph == null) {
+                    phase2CompiledGraph = buildPhase2Graph().compile();
+                }
+            }
+        }
+        return phase2CompiledGraph;
+    }
+
+    private CompiledGraph phase3CompiledGraph() throws GraphStateException {
+        if (phase3CompiledGraph == null) {
+            synchronized (this) {
+                if (phase3CompiledGraph == null) {
+                    phase3CompiledGraph = buildPhase3Graph().compile();
+                }
+            }
+        }
+        return phase3CompiledGraph;
+    }
+
     /**
      * 创建状态键策略工厂
      * 所有键都使用替换策略
@@ -331,20 +365,20 @@ public class ArticleAgentOrchestrator {
     private KeyStrategyFactory createKeyStrategyFactory() {
         return () -> {
             HashMap<String, KeyStrategy> strategies = new HashMap<>();
-            strategies.put(KEY_TASK_ID, new ReplaceStrategy());
-            strategies.put(KEY_TOPIC, new ReplaceStrategy());
-            strategies.put(KEY_STYLE, new ReplaceStrategy());
-            strategies.put(KEY_USER_DESCRIPTION, new ReplaceStrategy());
-            strategies.put(KEY_MAIN_TITLE, new ReplaceStrategy());
-            strategies.put(KEY_SUB_TITLE, new ReplaceStrategy());
-            strategies.put(KEY_TITLE_OPTIONS, new ReplaceStrategy());
-            strategies.put(KEY_OUTLINE, new ReplaceStrategy());
-            strategies.put(KEY_CONTENT, new ReplaceStrategy());
-            strategies.put(KEY_CONTENT_WITH_PLACEHOLDERS, new ReplaceStrategy());
-            strategies.put(KEY_IMAGE_REQUIREMENTS, new ReplaceStrategy());
-            strategies.put(KEY_IMAGES, new ReplaceStrategy());
-            strategies.put(KEY_FULL_CONTENT, new ReplaceStrategy());
-            strategies.put(KEY_ENABLED_IMAGE_METHODS, new ReplaceStrategy());
+            strategies.put(ArticleWorkflowKeys.TASK_ID, new ReplaceStrategy());
+            strategies.put(ArticleWorkflowKeys.TOPIC, new ReplaceStrategy());
+            strategies.put(ArticleWorkflowKeys.STYLE, new ReplaceStrategy());
+            strategies.put(ArticleWorkflowKeys.USER_DESCRIPTION, new ReplaceStrategy());
+            strategies.put(ArticleWorkflowKeys.MAIN_TITLE, new ReplaceStrategy());
+            strategies.put(ArticleWorkflowKeys.SUB_TITLE, new ReplaceStrategy());
+            strategies.put(ArticleWorkflowKeys.TITLE_OPTIONS, new ReplaceStrategy());
+            strategies.put(ArticleWorkflowKeys.OUTLINE, new ReplaceStrategy());
+            strategies.put(ArticleWorkflowKeys.CONTENT, new ReplaceStrategy());
+            strategies.put(ArticleWorkflowKeys.CONTENT_WITH_PLACEHOLDERS, new ReplaceStrategy());
+            strategies.put(ArticleWorkflowKeys.IMAGE_REQUIREMENTS, new ReplaceStrategy());
+            strategies.put(ArticleWorkflowKeys.IMAGES, new ReplaceStrategy());
+            strategies.put(ArticleWorkflowKeys.FULL_CONTENT, new ReplaceStrategy());
+            strategies.put(ArticleWorkflowKeys.ENABLED_IMAGE_METHODS, new ReplaceStrategy());
             return strategies;
         };
     }

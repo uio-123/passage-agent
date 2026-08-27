@@ -1,5 +1,10 @@
 package com.yupi.template.agent.context;
 
+import com.yupi.template.agent.event.AgentStreamEvent;
+import com.yupi.template.model.enums.SseMessageTypeEnum;
+
+import java.time.Instant;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
 /**
@@ -10,15 +15,21 @@ import java.util.function.Consumer;
  */
 public class StreamHandlerContext {
 
-    private static final ThreadLocal<Consumer<String>> STREAM_HANDLER = new ThreadLocal<>();
+    private static final ThreadLocal<Consumer<AgentStreamEvent>> STREAM_HANDLER = new ThreadLocal<>();
+
+    private static final ThreadLocal<String> TASK_ID = new ThreadLocal<>();
+
+    private static final ThreadLocal<AtomicLong> SEQUENCE = new ThreadLocal<>();
 
     /**
      * 设置流式输出处理器
      *
      * @param handler 处理器
      */
-    public static void set(Consumer<String> handler) {
+    public static void set(String taskId, Consumer<AgentStreamEvent> handler) {
+        TASK_ID.set(taskId);
         STREAM_HANDLER.set(handler);
+        SEQUENCE.set(new AtomicLong());
     }
 
     /**
@@ -26,8 +37,16 @@ public class StreamHandlerContext {
      *
      * @return 处理器，可能为 null
      */
-    public static Consumer<String> get() {
+    public static Consumer<AgentStreamEvent> get() {
         return STREAM_HANDLER.get();
+    }
+
+    /**
+     * Captures the current event publisher so asynchronous work can emit events
+     * after it leaves the caller thread. The sequence counter remains shared.
+     */
+    public static StreamEventPublisher capture() {
+        return new StreamEventPublisher(TASK_ID.get(), STREAM_HANDLER.get(), SEQUENCE.get());
     }
 
     /**
@@ -36,6 +55,8 @@ public class StreamHandlerContext {
      */
     public static void clear() {
         STREAM_HANDLER.remove();
+        TASK_ID.remove();
+        SEQUENCE.remove();
     }
 
     /**
@@ -44,10 +65,20 @@ public class StreamHandlerContext {
      *
      * @param message 消息内容
      */
-    public static void send(String message) {
-        Consumer<String> handler = STREAM_HANDLER.get();
-        if (handler != null && message != null) {
-            handler.accept(message);
+    public static void send(String nodeId, SseMessageTypeEnum type, String delta) {
+        capture().publish(nodeId, type, delta);
+    }
+
+    public record StreamEventPublisher(
+            String taskId,
+            Consumer<AgentStreamEvent> handler,
+            AtomicLong sequence
+    ) {
+        public void publish(String nodeId, SseMessageTypeEnum type, String delta) {
+            if (handler != null && sequence != null && delta != null) {
+                handler.accept(new AgentStreamEvent(
+                        taskId, nodeId, type, sequence.incrementAndGet(), delta, Instant.now()));
+            }
         }
     }
 }
