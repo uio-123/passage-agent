@@ -13,6 +13,7 @@ create table if not exists agent_run
     status        varchar(32)  not null comment 'PENDING/RUNNING/WAITING_FOR_APPROVAL/PAUSED/COMPLETED/FAILED/CANCELLED',
     currentNode   varchar(128) null comment '最后确认的工作流节点',
     checkpointId  varchar(128) null comment '框架checkpoint标识',
+    stateVersion  bigint       default 0 not null comment '已持久化状态版本，用于乐观推进',
     stateSnapshot json         null comment '持久化工作流状态快照',
     errorMessage  text         null comment '失败信息',
     createTime    datetime default CURRENT_TIMESTAMP not null comment '创建时间',

@@ -8,7 +8,6 @@ import com.yupi.template.agent.tools.ImageGenerationTool;
 import com.yupi.template.model.dto.article.ArticleState;
 import com.yupi.template.model.enums.SseMessageTypeEnum;
 import com.yupi.template.utils.GsonUtils;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -26,10 +25,20 @@ import java.util.stream.Collectors;
  */
 @Component
 @Slf4j
-@RequiredArgsConstructor
 public class ParallelImageGenerator implements NodeAction {
 
     private final ImageGenerationTool imageGenerationTool;
+    private final IdempotentImageGenerationGateway imageGateway;
+
+    public ParallelImageGenerator(ImageGenerationTool imageGenerationTool) {
+        this(imageGenerationTool, null);
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public ParallelImageGenerator(ImageGenerationTool imageGenerationTool, IdempotentImageGenerationGateway imageGateway) {
+        this.imageGenerationTool = imageGenerationTool;
+        this.imageGateway = imageGateway;
+    }
 
     public static final String INPUT_IMAGE_REQUIREMENTS = ArticleWorkflowKeys.IMAGE_REQUIREMENTS;
     public static final String OUTPUT_IMAGES = ArticleWorkflowKeys.IMAGES;
@@ -76,7 +85,8 @@ public class ParallelImageGenerator implements NodeAction {
                         )));
         
         // 并行执行不同类型的图片生成
-        List<ArticleState.ImageResult> allImages = executeParallel(groupedBySource, streamPublisher);
+        String taskId = state.value(ArticleWorkflowKeys.TASK_ID).map(Object::toString).orElse(null);
+        List<ArticleState.ImageResult> allImages = executeParallel(groupedBySource, streamPublisher, taskId);
         
         // 按 position 排序
         allImages.sort((a, b) -> {
@@ -96,7 +106,7 @@ public class ParallelImageGenerator implements NodeAction {
      */
     private List<ArticleState.ImageResult> executeParallel(
             Map<String, List<ArticleState.ImageRequirement>> groupedBySource,
-            StreamHandlerContext.StreamEventPublisher streamPublisher) {
+            StreamHandlerContext.StreamEventPublisher streamPublisher, String taskId) {
         
         // 为每种 imageSource 创建异步任务
         List<CompletableFuture<List<ArticleState.ImageResult>>> futures = groupedBySource.entrySet().stream()
@@ -110,16 +120,7 @@ public class ParallelImageGenerator implements NodeAction {
                     // 同一类型内部串行执行
                     for (ArticleState.ImageRequirement req : requirements) {
                         try {
-                            ImageGenerationTool.ImageGenerationResult result = 
-                                    imageGenerationTool.generateImageDirect(
-                                            req.getImageSource(),
-                                            req.getKeywords(),
-                                            req.getPrompt(),
-                                            req.getPosition(),
-                                            req.getType(),
-                                            req.getSectionTitle(),
-                                            req.getPlaceholderId()
-                                    );
+                            ImageGenerationTool.ImageGenerationResult result = generateImage(taskId, req);
                             
                             if (result.isSuccess()) {
                                 ArticleState.ImageResult imageResult = convertToImageResult(result);
@@ -155,6 +156,17 @@ public class ParallelImageGenerator implements NodeAction {
                 .flatMap(future -> future.join().stream())
                 .collect(Collectors.toCollection(ArrayList::new));
     }
+
+    private ImageGenerationTool.ImageGenerationResult generateImage(String taskId, ArticleState.ImageRequirement req) {
+        java.util.function.Supplier<ImageGenerationTool.ImageGenerationResult> action = () -> imageGenerationTool.generateImageDirect(
+                req.getImageSource(), req.getKeywords(), req.getPrompt(), req.getPosition(), req.getType(),
+                req.getSectionTitle(), req.getPlaceholderId());
+        if (imageGateway == null || taskId == null || taskId.isBlank()) return action.get();
+        String identity = req.getPlaceholderId();
+        String nodeId = "image:" + (identity == null || identity.isBlank() ? req.getPosition() : identity);
+        return imageGateway.execute(taskId, nodeId, action);
+    }
+
 
     /**
      * 转换 ImageGenerationResult 为 ArticleState.ImageResult

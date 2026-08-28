@@ -142,6 +142,8 @@ AI 爆款文章创作器是一个基于 **Spring AI Alibaba** 构建的智能图
 mysql -uroot -p < sql/create_table.sql
 # Existing databases also need the Agent run persistence migration:
 mysql -uroot -p < sql/add_agent_run_tables.sql
+# Then apply the resumable-workflow checkpoint migration:
+mysql -uroot -p < sql/add_agent_workflow_persistence.sql
 ```
 
 ### 2. 配置 API Key
@@ -196,6 +198,14 @@ $env:LITELLM_MODEL = "your-model-name"
 ```bash
 mvn test -Plitellm-smoke
 ```
+
+Docker 可用时，可执行 P1 持久化集成测试；该 Profile 会创建并自动清理临时 MySQL 容器，不访问 LiteLLM、COS 或 Pexels：
+
+```bash
+mvn test -Ppersistence-integration
+```
+
+P1 已提供 Supervisor 受限路由、持久化 checkpoint、取消优先恢复和图片副作用幂等：同一图片节点在 checkpoint 尚未推进时重试，会复用已保存的首次结果，不会再次调用图片服务。真实研究 Tool、统一超时/预算/审计仍属于后续 P2。
 
 ### 4. 启动前端
 

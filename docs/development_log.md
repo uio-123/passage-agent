@@ -1,5 +1,19 @@
 # 开发记录
 
+## 2026-08-28  P1：执行文档与持久化模型起步
+
+- 新增并校验 `p1_execution_plan.md`：P1 按持久化模型、Supervisor 条件路由、checkpoint/HITL 恢复、节点幂等与收口五步推进；明确 P2 才统一外部 Tool 的超时、预算与审计，避免将 P1 的一致性控制扩张为 Tool Gateway。
+- E1 已开始：`agent_run` 增加状态版本，新增 checkpoint 与节点执行记录迁移，为乐观推进、单恢复者竞争和后续副作用幂等关联预留数据库约束；同时新增框架无关的 checkpoint 状态机契约。checkpoint Mapper/Service 通过状态与版本条件更新领取恢复权，子 Run 可持久化创建；节点执行记录的完整幂等提交/复用仍待完成，不能宣称已支持重启恢复。
+- 引入显式 `persistence-integration` Maven Profile（默认 `mvn test` 不启动 Docker）；该 Profile 使用 Testcontainers MySQL 执行 Agent Run / checkpoint 迁移，验证父子 Run、状态版本推进和两个恢复者对同一 checkpoint 的竞争。最终 2 项数据库集成测试均通过。过程中发现并修复 JVM 与 MySQL 的时间精度/时钟差异会使 `updatedAt < createdAt` 或转移时间早于持久化时间的问题：持久化映射规范化时间顺序，状态迁移不会使用早于已持久化时间的时间戳。
+- E1 收口：新增 `AgentNodeExecutionService`，用 `runId + nodeId + stateVersion` 的唯一键领取节点执行权。已成功的记录复用提交结果，运行中记录拒绝并发重放，失败记录只允许一个重试者条件转回运行状态。Testcontainers MySQL 集成测试扩展至 4 项并全部通过，覆盖重复结果复用、并发副作用最多一次与失败后重试；默认 `mvn test` 仍不启动 Docker。E1 完成，下一步进入 E2 的 Supervisor 业务路由接入。
+- E2 收口：Supervisor 计划补充 `maxSubtasks`、`allowedTools`、任务依赖与所需 Tool，并在路由前以 `SupervisorPlanValidator` 拒绝超预算、空/重复 ID、非法/循环依赖和 Tool 越权。`SupervisorWorkflowService` 接入持久化子 Run：研究请求先进入无外部 Tool 的研究占位节点，免研究请求不创建研究子 Run；Writer 依赖按波次满足后才受限并发执行，fan-in 按章节顺序稳定归并。新增离线测试覆盖两条路由、父子 Run 与依赖波次；真实研究 Tool/来源和模型规划仍在 P2。
+- 完整默认回归首次暴露既有并行图片 SSE 事件汇总竞态：两个并行分支对同一 Consumer 推送时，非线程安全消费者可能丢失事件或观察到乱序序号。`StreamHandlerContext` 现在把共享序列号递增与事件投递在同一 Consumer 锁内完成；`mvn test` 最终 33 项通过、0 失败、0 错误。
+- E3 收口：新增 `WorkflowRecoveryService`，使恢复遵循“CAS 领取 checkpoint → 执行下一节点 → 成功消费；失败释放”的边界，且不向调用者暴露图框架类型。Run 取消改为按当前状态条件更新，取消成功后 READY/CLAIMED checkpoint 一律转为 `CANCELLED`；领取期间检测到 Run 已变更会释放领取，避免僵尸 CLAIMED 记录。离线恢复测试 5 项通过；Docker/Testcontainers MySQL 集成测试 5 项通过（含取消后拒绝恢复）。E4 将处理 Tool 已完成但 checkpoint 尚未提交时的副作用一致性。
+- 计划调整：在 P1 收口与 P2 开始之间加入 P1.5“去模板化与项目身份整理”。用户确认已获原作者许可，因此计划覆盖 `com.yupi.template` 包名、Spring/MyBatis/springdoc 扫描字符串、Maven 构件元数据、前端 `codefather.cn` 页脚、README、示例配置和源码作者注释的统一替换或删除；保留 Git 历史与第三方依赖版权文本，不改数据库、HTTP API 或配置键，也不与 E4 混合。
+- E4 收口：`ParallelImageGenerator` 的每个图片副作用现经 `IdempotentImageGenerationGateway` 进入 `AgentNodeExecutionService`。有持久化 Run 时以 `runId + 图片节点 + stateVersion` 保存成功结果，checkpoint 未推进导致的同版本重试直接复用首次 URL，不会再次调用图片 Tool；无 Run 的旧路径保持直连兼容，Tool 返回失败不被标记成功。离线网关/图片兼容测试通过；Testcontainers MySQL 集成测试增至 6 项并通过，包含“副作用成功、checkpoint 失败后重试”场景。P1 下一步为 E5 文档与交接收口。
+- E5 收口：README、Compose、SQL 与 P1 执行文档已交叉核对；Compose 按顺序加载 Agent Run 和工作流持久化迁移。默认 `mvn test` 通过 36 项，Testcontainers MySQL 集成测试通过 6 项，`git diff --check` 无空白错误。P1 完成；下一独立阶段为 P1.5 去模板化与项目身份整理，之后进入 P2 的真实研究与 Tool 治理。
+- P1 文档校验时默认 `mvn test` 通过：25 项测试、0 失败、0 错误；E1 基础落地后最终复跑通过 26 项测试、0 失败、0 错误。两次首次增量编译分别触发已知 Windows 编译器资源关闭问题，未改源码后的第三次运行通过。Docker Compose 在当前环境因缺少 `PEXELS_API_KEY` 未能解析，数据库集成测试待具备可用 Docker 配置后补充。
+
 ## 2026-08-27  P0-B E3/E4：统一图与收口验证
 
 - 统一图改为单一 `StateGraph` 的条件边路由：每次阶段调用从 `route` 进入标题、大纲或正文配图分支，审批边界继续由 typed state 与 `WorkflowRunner` 校验，不再误用 checkpoint。

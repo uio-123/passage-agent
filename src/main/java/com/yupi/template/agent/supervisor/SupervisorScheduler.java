@@ -6,11 +6,13 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Function;
+import org.springframework.stereotype.Component;
 
 /**
  * Framework-neutral scheduling rules used by future graph nodes. It makes
  * routing, bounded parallelism and stable fan-in explicit and testable.
  */
+@Component
 public class SupervisorScheduler {
 
     public ExecutionRoute initialRoute(SupervisorPlan plan) {

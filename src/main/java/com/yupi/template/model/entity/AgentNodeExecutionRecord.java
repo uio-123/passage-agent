@@ -13,42 +13,27 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
-/** Persistent representation of the framework-neutral AgentRun contract. */
+/** Durable node-attempt record keyed by run, node and input state version. */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(value = "agent_run", camelToUnderline = false)
-public class AgentRunRecord implements Serializable {
+@Table(value = "agent_node_execution", camelToUnderline = false)
+public class AgentNodeExecutionRecord implements Serializable {
 
     @Serial
     private static final long serialVersionUID = 1L;
 
     @Id(keyType = KeyType.Auto)
     private Long id;
-
+    private String executionKey;
     private String runId;
-
-    private String rootRunId;
-
-    private String parentRunId;
-
-    private String taskId;
-
-    private String status;
-
-    private String currentNode;
-
-    private String checkpointId;
-
+    private String nodeId;
     private Long stateVersion;
-
-    private String stateSnapshot;
-
+    private String status;
+    private String resultSnapshot;
     private String errorMessage;
-
     private LocalDateTime createTime;
-
     private LocalDateTime updateTime;
 
     @Column(isLogicDelete = true)

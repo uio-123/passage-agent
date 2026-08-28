@@ -17,12 +17,35 @@ public class AgentRunServiceImpl extends ServiceImpl<AgentRunMapper, AgentRunRec
 
     @Override
     public AgentRunRecord createRootRun(String taskId) {
+        LocalDateTime now = LocalDateTime.now();
         AgentRunRecord record = AgentRunRecord.builder()
                 .runId(taskId)
                 .rootRunId(taskId)
                 .taskId(taskId)
                 .status(AgentRunStatus.PENDING.name())
-                .createTime(LocalDateTime.now())
+                .createTime(now)
+                .updateTime(now)
+                .build();
+        this.save(record);
+        return record;
+    }
+
+    @Override
+    public AgentRunRecord createChildRun(String runId, String parentRunId) {
+        AgentRunRecord parent = getByRunId(parentRunId);
+        if (parent == null) {
+            throw new IllegalStateException("Parent agent run does not exist: " + parentRunId);
+        }
+        LocalDateTime now = LocalDateTime.now();
+        AgentRunRecord record = AgentRunRecord.builder()
+                .runId(runId)
+                .rootRunId(parent.getRootRunId())
+                .parentRunId(parentRunId)
+                .taskId(parent.getTaskId())
+                .status(AgentRunStatus.PENDING.name())
+                .stateVersion(0L)
+                .createTime(now)
+                .updateTime(now)
                 .build();
         this.save(record);
         return record;
@@ -44,11 +67,15 @@ public class AgentRunServiceImpl extends ServiceImpl<AgentRunMapper, AgentRunRec
         if (createdAt == null) {
             throw new IllegalStateException("Agent run has no create time: " + runId);
         }
+        var createdInstant = createdAt.atZone(ZoneId.systemDefault()).toInstant();
+        var updatedInstant = updatedAt.atZone(ZoneId.systemDefault()).toInstant();
+        if (updatedInstant.isBefore(createdInstant)) {
+            updatedInstant = createdInstant;
+        }
         return new AgentRun(
                 record.getRunId(), record.getRootRunId(), record.getParentRunId(),
                 AgentRunStatus.valueOf(record.getStatus()),
-                createdAt.atZone(ZoneId.systemDefault()).toInstant(),
-                updatedAt.atZone(ZoneId.systemDefault()).toInstant()
+                createdInstant, updatedInstant
         );
     }
 
@@ -72,5 +99,22 @@ public class AgentRunServiceImpl extends ServiceImpl<AgentRunMapper, AgentRunRec
         record.setStatus(AgentRunStatus.FAILED.name());
         record.setErrorMessage(errorMessage);
         this.updateById(record);
+    }
+
+    @Override
+    public boolean cancel(String runId) {
+        AgentRunRecord record = getByRunId(runId);
+        if (record == null) {
+            throw new IllegalStateException("Agent run does not exist: " + runId);
+        }
+        AgentRunStatus current = AgentRunStatus.valueOf(record.getStatus());
+        if (current == AgentRunStatus.CANCELLED) {
+            return true;
+        }
+        if (!current.canTransitionTo(AgentRunStatus.CANCELLED)) {
+            return false;
+        }
+        AgentRunRecord update = AgentRunRecord.builder().status(AgentRunStatus.CANCELLED.name()).build();
+        return this.update(update, QueryWrapper.create().eq("runId", runId).eq("status", current.name()));
     }
 }

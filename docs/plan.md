@@ -367,7 +367,7 @@ generateStructured(StructuredRequest<T>) -> T
 
 目标：先解决架构边界、状态契约和测试基础，让后续能力可持续演进。
 
-执行顺序、每项验收、回滚与阶段门禁见 `p0-b_execution_plan.md`；该阶段文档经当前实现与测试状态校验后执行。进入 P1 前另行生成并校验 P1 专用执行文档。
+P0-B 的执行顺序、验收、回滚与阶段门禁见 `p0-b_execution_plan.md`。P1 的独立可执行文档已创建并校验，后续严格按 `p1_execution_plan.md` 的 E1–E5 顺序执行。
 
 - [x] 记录当前主链路的本地可比较基线：`WorkflowMetricsCollector` 在固定 Fake 三阶段工作流中采集阶段耗时、模型调用次数、结果状态和失败码；该数据不代表线上性能。
 - [ ] 以已确认的 Spring Boot 单后端作为开发基线，不恢复或维护 Go/Python 实现。
@@ -394,19 +394,34 @@ generateStructured(StructuredRequest<T>) -> T
 
 目标：从固定流水线升级为真正由状态和决策驱动的 Agent 工作流。
 
-- [ ] 实现 Supervisor Agent 和结构化 `ExecutionPlan/SubTaskSpec`，每个子任务声明依赖、预算、Tool 权限、预期 Artifact 和验收条件。
+- [ ] 实现 Supervisor Agent 和结构化 `ExecutionPlan/SubTaskSpec`，每个子任务声明依赖、预算、Tool 权限、预期 Artifact 和验收条件。**P1 已完成受限业务执行：** 计划预算、依赖和 Tool 权限校验，研究/跳过研究条件路由、父子 Run 映射及按依赖波次的受限并发 Writer；模型规划、预期 Artifact 和验收条件仍待 P2/P3 接入。
 - [x] 已完成框架无关的 `SupervisorPlan` / `SubtaskSpec` / `SupervisorScheduler` Fixture，验证研究路由、受限并发和稳定归并；尚未接入业务图，不等同于完成业务 Supervisor。
 - [ ] 优先采用 Spring AI Alibaba `Supervisor` / `LlmRouting` 的原生并行子 Agent、条件路由与聚合能力，不重复实现框架级 Agent 调度。
 - [ ] 实现项目层轻量 Scheduler：只负责为框架执行映射 `childRunId` / `parentRunId`，以及持久化依赖、预算、取消传播、幂等和审计；不承担 LLM 路由或节点并发编排。
 - [ ] 增加“研究/跳过研究”“配图/跳过配图”“发布/返工”条件边。
-- [ ] 将标题、大纲和发布确认接入 Human-in-the-loop interrupt。
-- [ ] 实现 checkpoint、恢复 API、任务取消、超时及节点幂等。
+- [ ] 将标题、大纲和发布确认接入 Human-in-the-loop interrupt。**P1 已完成服务层一次性领取/消费与取消传播；**现有 HTTP 审批 API 的恢复入口仍待后续按兼容方式接入。
+- [ ] 实现 checkpoint、恢复 API、任务取消、超时及节点幂等。**P1 已完成** checkpoint 持久化、恢复互斥、失败释放、取消优先和节点执行键；Tool 超时与统一策略留待 P2，副作用一致性在 P1 E4 收口。
 - [ ] 使用同一 `runId` 贯穿前后端、数据库和 SSE 事件。
 - [ ] 补充路由矩阵测试、暂停/恢复测试、重复请求幂等测试。
 - [ ] 使用 Testcontainers 补充 checkpoint、父子 Run 与事件持久化测试；覆盖同一 `runId` 重复提交、节点重复执行、取消与 fan-out 并发、恢复与重试并发、Tool 已执行但 checkpoint 未提交等一致性场景。
 - [ ] 将并发恢复不变量固化为断言：同一幂等键最多产生一次有效外部副作用；同一 checkpoint 仅允许一个恢复者推进；运行终态不可回退；Artifact、上传和扣费/配额记录不得重复生成。
 
 验收：服务重启或用户离开页面后，可以从最近检查点继续且不重复调用已成功 Tool 或扣减配额；至少三种条件路由有可重复测试证据；任一子 Agent 执行可追溯到父任务、输入契约、预算和交付物。
+
+### P1.5：去模板化与项目身份整理（优先级：中，P1 收口后、P2 前执行）
+
+目标：在已获原作者许可的前提下，统一移除或替换项目中面向用户和工程元数据的原模板作者标识，将项目整理为自有身份。核心命名空间建议迁移为 `com.passage.agent`；本阶段不改变业务行为、数据库表或 HTTP API，且必须使用独立提交，不与 P1 E4 的副作用一致性改动混合。
+
+- [ ] **Java 命名空间：** 全量迁移 `src/main/java`、`src/test/java` 的目录、`package` 与 `import`，将 `com.yupi.template` 替换为新命名空间。
+- [ ] **运行时扫描与字符串引用：** 更新 Spring Boot 主类、组件扫描、MyBatis Mapper 扫描/XML namespace、springdoc `packages-to-scan`、测试配置、反射字符串及脚本，确保运行时不存在旧包名依赖。
+- [ ] **Maven 构件身份：** 将 `pom.xml` 的 `groupId`、`artifactId`、`name`、`description` 迁移为项目自有标识；核查 CI、Docker、文档和发布脚本是否引用旧构件坐标，并同步更新。
+- [ ] **前端可见归属：** 删除或替换全局页脚中的 `codefather.cn` 链接和“编程导航原创项目”文案；核查页面标题、SEO 元数据、静态资源、示例账号/演示文案中是否还有模板来源标识。
+- [ ] **文档与注释：** 更新 README 的作者区、目录树、链接和项目描述；移除或替换源码与示例配置中的原作者 `@author`、`by 编程导航` 等署名，不伪造未实际参与者的署名。
+- [ ] **合规与历史边界：** 删除当前工作树中可见的原作者归属文本前复核许可凭据；不重写 Git 历史、已有 commit 作者或第三方依赖的版权/许可证文本。
+- [ ] **兼容性：** 保持数据库表名、外部 HTTP API 路径、配置键及既有数据兼容不变；如构件坐标变更影响部署或发布，提供明确迁移说明。
+- [ ] **验证与交接：** 执行 `git diff --check`、完整 `mvn test`、`mvn -Ppersistence-integration test` 和 Docker Compose 健康检查；在 README、`development_log.md` 记录新身份、影响范围、验证结果与独立提交。
+
+验收：生产/测试源码、运行时扫描、Maven 元数据、前端页脚、README、示例配置和源码注释均不再显示 `yupi`、编程导航或原作者站点；Spring Context、MyBatis Mapper、默认测试、持久化集成测试和容器健康检查通过。回滚方式：直接回退 P1.5 的独立提交，不触碰 P1 已持久化数据或已发布 API。
 
 ### P2：Skills、受控工具与可追溯内容（优先级：高）
 

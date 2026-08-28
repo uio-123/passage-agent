@@ -29,6 +29,7 @@ services:
       - ./sql/add_article_style.sql:/docker-entrypoint-initdb.d/04_add_article_style.sql:ro
       - ./sql/add_vip_payment.sql:/docker-entrypoint-initdb.d/05_add_vip_payment.sql:ro
       - ./sql/add_agent_run_tables.sql:/docker-entrypoint-initdb.d/06_add_agent_run_tables.sql:ro
+      - ./sql/add_agent_workflow_persistence.sql:/docker-entrypoint-initdb.d/07_add_agent_workflow_persistence.sql:ro
     networks:
       - app-network
     healthcheck:

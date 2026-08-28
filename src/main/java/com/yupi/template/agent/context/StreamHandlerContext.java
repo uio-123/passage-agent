@@ -76,8 +76,13 @@ public class StreamHandlerContext {
     ) {
         public void publish(String nodeId, SseMessageTypeEnum type, String delta) {
             if (handler != null && sequence != null && delta != null) {
-                handler.accept(new AgentStreamEvent(
-                        taskId, nodeId, type, sequence.incrementAndGet(), delta, Instant.now()));
+                // A captured publisher is shared by parallel graph branches. Keep
+                // increment and delivery atomic so non-thread-safe SSE consumers
+                // cannot lose an event or observe sequence numbers out of order.
+                synchronized (handler) {
+                    handler.accept(new AgentStreamEvent(
+                            taskId, nodeId, type, sequence.incrementAndGet(), delta, Instant.now()));
+                }
             }
         }
     }

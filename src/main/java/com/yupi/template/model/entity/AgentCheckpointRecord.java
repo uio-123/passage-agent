@@ -13,42 +13,28 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
-/** Persistent representation of the framework-neutral AgentRun contract. */
+/** Persistent checkpoint; status changes are always guarded by the current value. */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(value = "agent_run", camelToUnderline = false)
-public class AgentRunRecord implements Serializable {
+@Table(value = "agent_checkpoint", camelToUnderline = false)
+public class AgentCheckpointRecord implements Serializable {
 
     @Serial
     private static final long serialVersionUID = 1L;
 
     @Id(keyType = KeyType.Auto)
     private Long id;
-
-    private String runId;
-
-    private String rootRunId;
-
-    private String parentRunId;
-
-    private String taskId;
-
-    private String status;
-
-    private String currentNode;
-
     private String checkpointId;
-
+    private String runId;
+    private String nodeId;
     private Long stateVersion;
-
     private String stateSnapshot;
-
-    private String errorMessage;
-
+    private String status;
+    private LocalDateTime claimedAt;
+    private LocalDateTime consumedAt;
     private LocalDateTime createTime;
-
     private LocalDateTime updateTime;
 
     @Column(isLogicDelete = true)
