@@ -1,5 +1,4 @@
 # 数据库初始化（基础表结构）
-# @author <a href="https://codefather.cn">编程导航学习圈</a>
 # 注意：此文件只包含基础表结构，其他字段由增量 SQL 文件添加
 
 -- 设置字符集（解决中文乱码问题）
@@ -31,11 +30,11 @@ create table if not exists user
 ) comment '用户' collate = utf8mb4_unicode_ci;
 
 -- 初始化数据
--- 密码是 12345678（MD5 加密 + 盐值 yupi）
+-- 密码是 12345678（MD5 加密 + 兼容既有账号的历史盐值）
 INSERT INTO user (id, userAccount, userPassword, userName, userAvatar, userProfile, userRole) VALUES
-(1, 'admin', '10670d38ec32fa8102be6a37f8cb52bf', '管理员', 'https://www.codefather.cn/logo.png', '系统管理员', 'admin'),
-(2, 'user', '10670d38ec32fa8102be6a37f8cb52bf', '普通用户', 'https://www.codefather.cn/logo.png', '我是一个普通用户', 'user'),
-(3, 'test', '10670d38ec32fa8102be6a37f8cb52bf', '测试账号', 'https://www.codefather.cn/logo.png', '这是一个测试账号', 'user');
+(1, 'admin', '10670d38ec32fa8102be6a37f8cb52bf', '管理员', '', '系统管理员', 'admin'),
+(2, 'user', '10670d38ec32fa8102be6a37f8cb52bf', '普通用户', '', '我是一个普通用户', 'user'),
+(3, 'test', '10670d38ec32fa8102be6a37f8cb52bf', '测试账号', '', '这是一个测试账号', 'user');
 
 -- 文章表（基础字段，style/phase/titleOptions/userDescription/enabledImageMethods 由增量脚本添加）
 create table if not exists article

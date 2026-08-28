@@ -1,6 +1,6 @@
 spring:
   application:
-    name: ai-passage-creator
+    name: passage-agent
   profiles:
     active: local
   # session 配置
@@ -37,7 +37,7 @@ springdoc:
   group-configs:
     - group: 'default'
       paths-to-match: '/**'
-      packages-to-scan: com.yupi.template.controller
+      packages-to-scan: com.passage.agent.controller
 # knife4j 接口文档配置
 knife4j:
   enable: true

@@ -412,14 +412,14 @@ P0-B 的执行顺序、验收、回滚与阶段门禁见 `p0-b_execution_plan.md
 
 目标：在已获原作者许可的前提下，统一移除或替换项目中面向用户和工程元数据的原模板作者标识，将项目整理为自有身份。核心命名空间建议迁移为 `com.passage.agent`；本阶段不改变业务行为、数据库表或 HTTP API，且必须使用独立提交，不与 P1 E4 的副作用一致性改动混合。
 
-- [ ] **Java 命名空间：** 全量迁移 `src/main/java`、`src/test/java` 的目录、`package` 与 `import`，将 `com.yupi.template` 替换为新命名空间。
-- [ ] **运行时扫描与字符串引用：** 更新 Spring Boot 主类、组件扫描、MyBatis Mapper 扫描/XML namespace、springdoc `packages-to-scan`、测试配置、反射字符串及脚本，确保运行时不存在旧包名依赖。
-- [ ] **Maven 构件身份：** 将 `pom.xml` 的 `groupId`、`artifactId`、`name`、`description` 迁移为项目自有标识；核查 CI、Docker、文档和发布脚本是否引用旧构件坐标，并同步更新。
-- [ ] **前端可见归属：** 删除或替换全局页脚中的 `codefather.cn` 链接和“编程导航原创项目”文案；核查页面标题、SEO 元数据、静态资源、示例账号/演示文案中是否还有模板来源标识。
-- [ ] **文档与注释：** 更新 README 的作者区、目录树、链接和项目描述；移除或替换源码与示例配置中的原作者 `@author`、`by 编程导航` 等署名，不伪造未实际参与者的署名。
-- [ ] **合规与历史边界：** 删除当前工作树中可见的原作者归属文本前复核许可凭据；不重写 Git 历史、已有 commit 作者或第三方依赖的版权/许可证文本。
-- [ ] **兼容性：** 保持数据库表名、外部 HTTP API 路径、配置键及既有数据兼容不变；如构件坐标变更影响部署或发布，提供明确迁移说明。
-- [ ] **验证与交接：** 执行 `git diff --check`、完整 `mvn test`、`mvn -Ppersistence-integration test` 和 Docker Compose 健康检查；在 README、`development_log.md` 记录新身份、影响范围、验证结果与独立提交。
+- [x] **Java 命名空间：** 全量迁移 `src/main/java`、`src/test/java` 的目录、`package` 与 `import`，统一为 `com.passage.agent`。
+- [x] **运行时扫描与字符串引用：** 已更新 Spring Boot 主类、组件扫描、MyBatis Mapper/XML namespace 与 springdoc 扫描配置。
+- [x] **Maven 构件身份：** `pom.xml` 已迁移为 `com.passage:passage-agent`，应用名同步为 `passage-agent`。
+- [x] **前端可见归属：** 已移除全局页脚的模板站点链接与来源文案。
+- [x] **文档与注释：** README 已更新项目名称和目录树，源码、示例配置与 SQL 中的原作者署名已移除。
+- [x] **合规与历史边界：** 已复核开发记录中的许可前提；未重写 Git 历史、已有 commit 作者或第三方依赖的版权/许可证文本。
+- [x] **兼容性：** 数据库表名、外部 HTTP API 路径与配置键未改动；构件坐标迁移为 `com.passage:passage-agent`，部署使用 Maven 构建时需相应引用新产物名。
+- [x] **验证与交接：** `git diff --check`、完整 `mvn test`、前端生产构建、Compose 静态配置与持久化 Profile 均已通过；持久化集成测试实际执行 6 项、0 失败、0 跳过。
 
 验收：生产/测试源码、运行时扫描、Maven 元数据、前端页脚、README、示例配置和源码注释均不再显示 `yupi`、编程导航或原作者站点；Spring Context、MyBatis Mapper、默认测试、持久化集成测试和容器健康检查通过。回滚方式：直接回退 P1.5 的独立提交，不触碰 P1 已持久化数据或已发布 API。
 

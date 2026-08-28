@@ -1,16 +1,7 @@
 <template>
   <a-layout-footer class="footer">
     <div class="footer-content">
-      <p class="copyright">
-        <a
-          href="https://www.codefather.cn"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="author-link"
-        >
-          编程导航原创项目
-        </a>
-      </p>
+      <p class="copyright">Passage Agent</p>
     </div>
   </a-layout-footer>
 </template>
@@ -39,12 +30,4 @@
   font-size: 13px;
 }
 
-.author-link {
-  color: var(--color-text-muted);
-  transition: color var(--transition-fast);
-}
-
-.author-link:hover {
-  color: var(--color-text);
-}
 </style>

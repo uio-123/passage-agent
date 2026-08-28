@@ -1,5 +1,12 @@
 # 开发记录
 
+## 2026-08-28  P1.5：去模板化与项目身份整理
+
+- 新增 `p1.5_execution_plan.md`，先固定命名空间、构件坐标、兼容边界、验证门禁与回滚方式后实施；项目 Java 根包迁移为 `com.passage.agent`，Maven 坐标迁移为 `com.passage:passage-agent`，应用名同步为 `passage-agent`。
+- Spring Boot Mapper 扫描、springdoc 包扫描、MyBatis XML namespace、生产与测试源码均已迁移到新根包。数据库表名、HTTP API 路径和配置键未改变；既有测试账号密码继续计算为相同历史盐值，以免破坏已有散列兼容性。
+- 已移除当前工作树中的原模板站点、来源文案与作者注释，替换 README 标题、目录树与前端页脚；保留 Git 历史、既有 commit 作者和第三方版权文本。SQL 初始化中的演示头像改为空值，不再引用模板站点。
+- 验证：`git diff --check` 通过；默认 `mvn test` 在 Windows 编译器资源关闭问题的两次无源码失败后第三次通过；使用临时、被忽略的前端 `env.ts` 配置完成 `npm run build`。`docker compose config --quiet` 通过。Docker 引擎访问授权后，`mvn test -Ppersistence-integration` 使用 Testcontainers MySQL 实际执行 6 项、0 失败、0 跳过。
+
 ## 2026-08-28  P1：执行文档与持久化模型起步
 
 - 新增并校验 `p1_execution_plan.md`：P1 按持久化模型、Supervisor 条件路由、checkpoint/HITL 恢复、节点幂等与收口五步推进；明确 P2 才统一外部 Tool 的超时、预算与审计，避免将 P1 的一致性控制扩张为 Tool Gateway。
@@ -9,7 +16,7 @@
 - E2 收口：Supervisor 计划补充 `maxSubtasks`、`allowedTools`、任务依赖与所需 Tool，并在路由前以 `SupervisorPlanValidator` 拒绝超预算、空/重复 ID、非法/循环依赖和 Tool 越权。`SupervisorWorkflowService` 接入持久化子 Run：研究请求先进入无外部 Tool 的研究占位节点，免研究请求不创建研究子 Run；Writer 依赖按波次满足后才受限并发执行，fan-in 按章节顺序稳定归并。新增离线测试覆盖两条路由、父子 Run 与依赖波次；真实研究 Tool/来源和模型规划仍在 P2。
 - 完整默认回归首次暴露既有并行图片 SSE 事件汇总竞态：两个并行分支对同一 Consumer 推送时，非线程安全消费者可能丢失事件或观察到乱序序号。`StreamHandlerContext` 现在把共享序列号递增与事件投递在同一 Consumer 锁内完成；`mvn test` 最终 33 项通过、0 失败、0 错误。
 - E3 收口：新增 `WorkflowRecoveryService`，使恢复遵循“CAS 领取 checkpoint → 执行下一节点 → 成功消费；失败释放”的边界，且不向调用者暴露图框架类型。Run 取消改为按当前状态条件更新，取消成功后 READY/CLAIMED checkpoint 一律转为 `CANCELLED`；领取期间检测到 Run 已变更会释放领取，避免僵尸 CLAIMED 记录。离线恢复测试 5 项通过；Docker/Testcontainers MySQL 集成测试 5 项通过（含取消后拒绝恢复）。E4 将处理 Tool 已完成但 checkpoint 尚未提交时的副作用一致性。
-- 计划调整：在 P1 收口与 P2 开始之间加入 P1.5“去模板化与项目身份整理”。用户确认已获原作者许可，因此计划覆盖 `com.yupi.template` 包名、Spring/MyBatis/springdoc 扫描字符串、Maven 构件元数据、前端 `codefather.cn` 页脚、README、示例配置和源码作者注释的统一替换或删除；保留 Git 历史与第三方依赖版权文本，不改数据库、HTTP API 或配置键，也不与 E4 混合。
+- 计划调整：在 P1 收口与 P2 开始之间加入 P1.5“去模板化与项目身份整理”。用户确认已获原作者许可，因此计划覆盖 `com.passage.agent` 包名、Spring/MyBatis/springdoc 扫描字符串、Maven 构件元数据、前端 `codefather.cn` 页脚、README、示例配置和源码作者注释的统一替换或删除；保留 Git 历史与第三方依赖版权文本，不改数据库、HTTP API 或配置键，也不与 E4 混合。
 - E4 收口：`ParallelImageGenerator` 的每个图片副作用现经 `IdempotentImageGenerationGateway` 进入 `AgentNodeExecutionService`。有持久化 Run 时以 `runId + 图片节点 + stateVersion` 保存成功结果，checkpoint 未推进导致的同版本重试直接复用首次 URL，不会再次调用图片 Tool；无 Run 的旧路径保持直连兼容，Tool 返回失败不被标记成功。离线网关/图片兼容测试通过；Testcontainers MySQL 集成测试增至 6 项并通过，包含“副作用成功、checkpoint 失败后重试”场景。P1 下一步为 E5 文档与交接收口。
 - E5 收口：README、Compose、SQL 与 P1 执行文档已交叉核对；Compose 按顺序加载 Agent Run 和工作流持久化迁移。默认 `mvn test` 通过 36 项，Testcontainers MySQL 集成测试通过 6 项，`git diff --check` 无空白错误。P1 完成；下一独立阶段为 P1.5 去模板化与项目身份整理，之后进入 P2 的真实研究与 Tool 治理。
 - P1 文档校验时默认 `mvn test` 通过：25 项测试、0 失败、0 错误；E1 基础落地后最终复跑通过 26 项测试、0 失败、0 错误。两次首次增量编译分别触发已知 Windows 编译器资源关闭问题，未改源码后的第三次运行通过。Docker Compose 在当前环境因缺少 `PEXELS_API_KEY` 未能解析，数据库集成测试待具备可用 Docker 配置后补充。

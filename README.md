@@ -1,8 +1,8 @@
-# AI 爆款文章创作器 ✍️
+# Passage Agent ✍️
 
 <div align="center">
 
-**AI 爆款文章创作器**
+**Passage Agent**
 
 基于多智能体协作，自动完成从选题、大纲、正文到配图的全流程图文创作
 
@@ -308,7 +308,7 @@ docker compose down -v
 ## 📁 项目结构
 
 ```
-├── src/main/java/com/yupi/template/
+├── src/main/java/com/passage/agent/
 │   ├── agent/                       # 智能体模块
 │   │   ├── agents/                  # 各智能体实现
 │   │   │   ├── TitleGeneratorAgent.java
@@ -482,9 +482,6 @@ public class NewMethodService implements ImageSearchService {
 ## 📖 相关文档
 
 - [文档索引](docs/README.md) - 开发计划、执行文档、兼容性记录与业务说明
+- [P1.5 执行文档](docs/p1.5_execution_plan.md) - 项目身份迁移的范围、兼容性与验证结果
 - [VIP 功能说明](docs/vip_features.md) - VIP 会员权益介绍
 - [Stripe 支付配置](docs/stripe_setup.md) - 支付功能配置指南
-
-## 👨‍💻 作者
-
-<a href="https://codefather.cn">编程导航学习圈</a>

@@ -1,7 +1,5 @@
 # 本地开发环境配置示例
 # 使用说明：将此文件复制为 application-local.yml，并填写实际的 API Key
-# @author <a href="https://codefather.cn">编程导航学习圈</a>
-
 spring:
   # LiteLLM（OpenAI 兼容接口）配置
   ai:
