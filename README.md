@@ -4,7 +4,7 @@
 
 **Passage Agent**
 
-基于多智能体协作，自动完成从选题、大纲、正文到配图的全流程图文创作
+基于混合式 Agent Workflow，自动完成从选题、大纲、正文到配图的全流程图文创作
 
 ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5.9-6DB33F?style=flat-square&logo=springboot&logoColor=white)
 ![Spring AI Alibaba](https://img.shields.io/badge/Spring%20AI%20Alibaba-1.1.2.2-FF6A00?style=flat-square&logo=spring&logoColor=white)
@@ -16,7 +16,9 @@
 
 ## 🏗 项目简介
 
-AI 爆款文章创作器是一个基于 **Spring AI Alibaba** 构建的智能图文创作平台，通过 **5 个智能体协作** 完成从选题到图文文章的全自动创作，每个阶段都支持用户介入，实现人机协作的创作体验。
+Passage Agent 是一个基于 **Spring AI Alibaba** 构建的智能图文创作平台。它以 Workflow 管理阶段状态、用户审批、恢复和副作用一致性，并在需要开放式推理的节点使用 Agent 生成内容、分析配图和处理后续研究/评审任务。
+
+当前已上线的主链路是受控的标题—大纲—正文—配图工作流；Research、章节并行写作、评审与局部返工属于后续受限 Agent 能力，详见[开发计划](docs/plan.md)。
 
 ```
 阶段1: 选题 → 生成 3-5 个标题方案 → 用户选择
@@ -28,7 +30,7 @@ AI 爆款文章创作器是一个基于 **Spring AI Alibaba** 构建的智能图
 
 | 特性 | 说明 | 价值 |
 |------|------|------|
-| 🤖 多智能体协作 | 5 个 Agent 分工协作，StateGraph 编排 | 专业分工，质量更高 |
+| 🤖 混合式 Agent Workflow | Workflow 管理状态、审批、恢复与幂等；Agent 处理生成与判断 | 既可控、可恢复，也能处理开放式创作任务 |
 | 🎨 多元配图 | 6 种配图策略 + 自动降级 | 图文并茂，永不中断 |
 | 📡 实时流式输出 | SSE 推送大纲/正文创作过程 | 所见即所得 |
 | 🧑‍💻 人机协作 | 三阶段创作，每步可介入 | 创作可控 |
@@ -37,7 +39,7 @@ AI 爆款文章创作器是一个基于 **Spring AI Alibaba** 构建的智能图
 
 ## ✨ 功能特性
 
-### 智能体协作
+### 当前创作工作流
 
 | 智能体 | 功能 | 说明 |
 |--------|------|------|
@@ -407,9 +409,11 @@ enabledImageMethods  -- 允许的配图方式（JSON 数组）
 
 ## 🏛 架构特点
 
-### 多智能体编排
+### 混合式 Agent Workflow
 
-采用 Spring AI Alibaba 的 StateGraph 实现智能体编排：
+Workflow 是控制平面：负责状态流转、Human-in-the-loop 审批、checkpoint 恢复、取消、并发和副作用幂等；Agent 是受约束的认知执行单元：负责标题、大纲、正文、配图分析，以及后续的研究、评审和局部返工。图片检索、上传和 Markdown 合成等确定性操作仍是 Tool/Service，不作为 Agent。
+
+当前采用 Spring AI Alibaba 的 StateGraph 承载确定性创作工作流：
 
 ```java
 StateGraph graph = new StateGraph(keyStrategyFactory)

@@ -1,5 +1,11 @@
 # 开发记录
 
+## 2026-08-28  架构定位：混合式 Agent Workflow
+
+- 复核 P1 已完成的持久化 Run、Supervisor 受限路由、checkpoint 恢复、取消优先与图片副作用幂等后，明确项目不应演进为由自由 Agent 自行编排全部步骤的系统，而是采用“Workflow 控制平面 + Agent 认知执行单元”的混合架构。
+- Workflow/普通服务继续负责生命周期、状态迁移、HITL、checkpoint、取消、并发、预算硬上限、幂等和外部副作用提交；Agent 仅在受校验计划、结构化契约和 Tool 白名单内完成开放式规划、研究、写作、评审与局部返工。确定性图片、存储、Markdown 合成和数据库操作保持为 Tool/Service。
+- 同步更新 `plan.md` 和 README：P1 成果定位为不可替代的控制底座；P2 的真实研究与 Tool 治理、P3 的并行 Writer/Reviewer/Revision 均明确在 Workflow 的状态、策略、质量门禁和循环上限内执行。此次为架构表述与后续验收边界澄清，不宣称 P2/P3 能力已实现，也不修改运行时代码。
+
 ## 2026-08-28  P1.5：去模板化与项目身份整理
 
 - 新增 `p1.5_execution_plan.md`，先固定命名空间、构件坐标、兼容边界、验证门禁与回滚方式后实施；项目 Java 根包迁移为 `com.passage.agent`，Maven 坐标迁移为 `com.passage:passage-agent`，应用名同步为 `passage-agent`。

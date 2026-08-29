@@ -1,8 +1,8 @@
 # AI Passage 多 Agent 协同创作平台改造计划
 
-> 文档状态：Draft 1.8
-> 更新日期：2026-08-27
-> 项目目标：参考 DeerFlow 的 Agent Harness 思想，将当前项目从“多个 LLM 节点组成的固定流水线”升级为面向图文内容生产的垂直任务执行系统，使其具备任务规划、层级协作、Skills、受控工具、质量闭环、断点恢复、上下文治理、可验证交付和全链路观测能力，并形成可演示、可量化、适合写入简历的工程项目。
+> 文档状态：Draft 1.9
+> 更新日期：2026-08-28
+> 项目目标：参考 DeerFlow 的 Agent Harness 思想，将当前项目从“多个 LLM 节点组成的固定流水线”升级为面向图文内容生产的混合式 Agent Workflow：以可恢复、可审计的 Workflow 负责控制，以受约束的 Agent 负责研究、创作与评审，使其具备任务规划、层级协作、Skills、受控工具、质量闭环、断点恢复、上下文治理、可验证交付和全链路观测能力，并形成可演示、可量化、适合写入简历的工程项目。
 
 ## 0. 已确认的技术决策
 
@@ -13,6 +13,18 @@
 - 当前 `spring-ai-alibaba-agent-framework:1.1.0.0-RC2` 仅作为待收口基线；优先升级到经验证的正式 `1.1.2.2` 组合必须单独实施、测试并提交，禁止与业务功能改造混合。
 - 当前工作区中的 Go/Python 删除应作为一次独立的“后端技术栈收敛”变更保留；后续修改不得误恢复这些目录。
 - 在开始多 Agent 架构开发前，必须先修复本地运行、Docker 部署、配置模板和文档之间的不一致，建立可验证的 Java 单后端基线。
+
+### 0.1 混合架构边界（本轮澄清）
+
+本项目不演进为由自由 Agent 自行决定全部流程的系统，而采用 **Workflow 控制平面 + Agent 认知执行单元** 的混合架构。
+
+| 职责 | 归属 | 例子 | 约束 |
+|---|---|---|---|
+| 生命周期、状态迁移、HITL、checkpoint、取消、并发、预算上限、幂等与副作用提交 | Workflow / 普通服务 | 标题确认后才能生成大纲；同一图片节点重试复用首次结果 | 必须由代码和持久化约束保证，不能交给模型判断 |
+| 开放式规划、是否需要研究、资料归纳、章节创作、质量判断、局部修改建议 | Agent | Supervisor 生成受校验计划；Research 整理来源；Reviewer 给出问题定位 | 必须使用结构化输入输出、Tool 白名单、预算和终止条件 |
+| 检索、网页读取、图片下载/生成、上传、Markdown 合成、状态写入 | Tool / 领域服务 | Pexels、COS、Mermaid、数据库 | 不伪装为 Agent；统一经过 Policy 与幂等边界 |
+
+因此，P1 已完成的 Run、checkpoint、恢复与副作用幂等是混合架构的 Workflow 底座，保持不动。P2/P3 只在这个底座内增加受限的 Agent 能力，不另建一套并行编排或允许 Supervisor 绕过状态、策略和审批边界。
 
 ## 1. 当前项目判断
 
@@ -53,13 +65,13 @@
 
 借鉴后的项目定位：
 
-> **AI Passage 是一个面向图文内容生产的垂直 Agent Harness：由 Lead Agent 规划和验收，专业子 Agent 使用受控 Skills/Tools 协作执行，最终交付带来源、图片、质量报告和执行轨迹的可验证文章。**
+> **AI Passage 是一个面向图文内容生产的垂直混合式 Agent Workflow：Workflow 保障任务状态、审批、恢复和副作用一致性；Lead Agent 在受校验计划内协调专业子 Agent 与 Skills/Tools，最终交付带来源、图片、质量报告和执行轨迹的可验证文章。**
 
 ## 2. 改造目标与成功标准
 
 ### 2.1 核心目标
 
-构建一个由 Supervisor 统一协调、专业 Agent 分工、共享任务状态驱动的智能内容生产系统。系统能够根据用户目标自动制定创作计划，按需调用研究和配图工具，并行完成章节创作，通过评审 Agent 触发局部返工，最终输出带来源、图片和质量报告的文章。
+构建一个由 Workflow 管理生命周期和治理约束、Supervisor 在受校验边界内协调专业 Agent 的智能内容生产系统。系统能够根据用户目标自动制定创作计划，按需调用研究和配图工具，并行完成章节创作，通过评审 Agent 触发局部返工，最终输出带来源、图片和质量报告的文章。
 
 ### 2.2 可验收标准
 
@@ -103,7 +115,7 @@
 | Image Worker | 并发执行 Pexels、Mermaid、Iconify、AI 生图等确定性工具 | 否/按策略 | `ImageResult[]` |
 | Chief Editor Agent | 统一术语、去重、组织引用，并输出最终 Markdown | 是 + 规则 | `FinalArticle` |
 
-说明：Agent 是有目标、状态、决策或评审能力的 LLM 角色；图片下载、上传、Markdown 替换等确定性能力定义为 Tool/Service，避免概念注水。
+说明：Agent 是有目标、状态、决策或评审能力的 LLM 角色；图片下载、上传、Markdown 替换等确定性能力定义为 Tool/Service，避免概念注水。图中的审批、恢复、取消、幂等、副作用提交和预算硬上限均由 Workflow/服务层执行，Agent 只能提出计划或决策建议，不能直接绕过这些边界。
 
 Supervisor 不直接承担所有业务细节。它输出结构化 `ExecutionPlan` 和 `SubTaskSpec[]`；Scheduler 根据依赖关系、预算和并发上限调度子任务；每次子 Agent 执行都生成独立的 `childRunId` 并关联主任务，最终由 Supervisor 根据验收条件决定返工或交付。
 
@@ -392,7 +404,7 @@ P0-B 的执行顺序、验收、回滚与阶段门禁见 `p0-b_execution_plan.md
 
 ### P1：Supervisor、动态路由与断点恢复（优先级：最高）
 
-目标：从固定流水线升级为真正由状态和决策驱动的 Agent 工作流。
+目标：完成混合架构的 Workflow 控制底座：从固定流水线升级为可由受校验状态和决策驱动的工作流，但不让自由 Agent 接管恢复、并发、审批或副作用一致性。
 
 - [ ] 实现 Supervisor Agent 和结构化 `ExecutionPlan/SubTaskSpec`，每个子任务声明依赖、预算、Tool 权限、预期 Artifact 和验收条件。**P1 已完成受限业务执行：** 计划预算、依赖和 Tool 权限校验，研究/跳过研究条件路由、父子 Run 映射及按依赖波次的受限并发 Writer；模型规划、预期 Artifact 和验收条件仍待 P2/P3 接入。
 - [x] 已完成框架无关的 `SupervisorPlan` / `SubtaskSpec` / `SupervisorScheduler` Fixture，验证研究路由、受限并发和稳定归并；尚未接入业务图，不等同于完成业务 Supervisor。
@@ -425,7 +437,9 @@ P0-B 的执行顺序、验收、回滚与阶段门禁见 `p0-b_execution_plan.md
 
 ### P2：Skills、受控工具与可追溯内容（优先级：高）
 
-目标：用版本化 Skill 封装创作 SOP，让 Agent 按需使用受控工具并产出可追溯资料。
+目标：在既有 Workflow 控制底座内，用版本化 Skill 封装创作 SOP，让 Agent 按需使用受控工具并产出可追溯资料。
+
+P2 的边界：Workflow 负责 Skill 选择后的状态推进、Tool Policy、预算、超时、审计和来源持久化；Supervisor / Skill Resolver / Research Agent 只在已授权的 Skill 与 Tool 集内进行开放式判断，不能直接调用基础设施或修改 Run 状态。
 
 - [ ] 实现双层 Skill 机制：框架层使用 `ReactAgent` 的 `read_skill` 按需渐进加载 Skill 内容；项目层实现 Skill Definition、Skill Registry、Schema 校验和版本管理，交付首批五个内置 Skills。
 - [ ] 项目层 Skill Registry 负责 Skill 版本、输入输出契约、`allowedTools`、预算、验收条件和审计；不重复实现框架的按需内容加载，也不开放第三方代码热执行。
@@ -443,7 +457,9 @@ P0-B 的执行顺序、验收、回滚与阶段门禁见 `p0-b_execution_plan.md
 
 ### P3：并行写作与多 Agent 评审闭环（优先级：最高）
 
-目标：形成项目最核心、最直观的多 Agent 协作亮点。
+目标：在 Workflow 的 fan-out/fan-in、质量门禁和循环上限内，形成项目最核心、最直观的多 Agent 协作亮点。
+
+P3 的边界：Workflow 负责章节任务拆分后的依赖、并发上限、稳定归并、质量门禁、最多两轮返工及版本持久化；Writer、Fact Checker、Style Reviewer、Revision Agent 仅生成结构化产物或修改建议。是否重试、返工范围和何时结束由代码校验 Agent 输出后决定。
 
 - [ ] 将大纲拆为 `SectionTask` 并通过框架并行条件边动态 fan-out，多个 Writer 并行生成章节。
 - [ ] 使用框架 `allOf` / `anyOf` 聚合策略实现稳定 fan-in；明确每类任务的“全部成功”或“允许部分成功”语义、最大并发、稳定归并顺序、部分失败重试和单章节降级。
