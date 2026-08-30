@@ -1,6 +1,6 @@
 # P4 收口修正执行计划
 
-状态：执行中  
+状态：已完成  
 目标：使 P4 计划、实现、测试与 Git 历史一致，并为 P5 提供可信的运行测量基线。
 
 ## 阶段与顺序
@@ -17,6 +17,7 @@
 - C1 已完成：P4 原始条目已改为可验证的已实现/部分实现陈述。
 - C2 已完成基础采集：模型 response metadata 的 usage/模型名、总耗时、流式首 Token、显式 `retryCount` 进入 append-only `agent_model_call_metric`；缺失 usage 保持 NULL，成本移交 P5。
 - C3 已完成：宿主 Docker 的 `AgentCheckpointPersistenceIntegrationTest` 14 项、0 失败、0 错误、0 跳过。测试暴露并修复了连接池下首次事件读到旧 `LAST_INSERT_ID()` 的序号错误，现从每 run 的持久化计数行读取序号。
+- C4 已完成：P2–P4 与收口修正以一个保持依赖完整的提交 `80b8b46`（`feat(agent): deliver P2-P4 workflow and observability`）入库；提交后工作区干净，未推送远程。
 
 每一 C 阶段在实施前更新本文件的接口、迁移、测试与回滚说明；不跨阶段偷偷引入未验证的指标或重构。
 
@@ -49,4 +50,4 @@
 
 ## C4 Git 边界
 
-按 P2、P3、P4（含收口修正）拆分提交；先检查每个待提交文件的归属，不将 `target/`、`frontend/dist/`、环境文件或无关用户改动加入。只有所有验证通过后提交，不推送远程。
+P2–P4 共享 Runner、配置、迁移与端到端测试，故采用一个保持依赖完整的提交；已在暂存前检查文件归属，未加入 `target/`、`frontend/dist/`、环境文件或无关用户改动。所有验证通过后提交，不推送远程。

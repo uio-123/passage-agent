@@ -402,3 +402,10 @@
 - 最终默认回归：`mvn test` 共 74 项通过，0 失败、0 错误、0 跳过。
 - `mvn test -Ppersistence-integration -Dtest=AgentCheckpointPersistenceIntegrationTest` 未构成验收：Docker Desktop Linux engine 命名管道不存在，Testcontainers 13 项全部跳过。Docker 守护进程恢复后必须复跑该命令并取得真实执行结果。
 - `AgentRunControllerTest` 已覆盖无请求体 continue 调用、响应结构与文章权限校验前置，定向通过。
+
+## 2026-08-31 — P4 收口：事件持久化与可信模型调用测量
+
+- 将 `docs/plan.md` 的 P4 状态改为已实现/部分实现的事实描述，未完成的 Flow 钩子、完整交付物下载、上下文压缩与价格表明确留给后续阶段。
+- 新增 append-only 模型调用测量表与受控 DTO，Token、模型名和时延仅从模型响应元数据与实际时钟采集；缺失 usage 保持未知，未虚构成本或重试。
+- 在宿主 Docker Desktop 上执行 `mvn -Ppersistence-integration -Dtest=AgentCheckpointPersistenceIntegrationTest test`：14 项通过、0 失败、0 错误、0 跳过。测试发现连接池中 `LAST_INSERT_ID()` 会返回旧值，已改为从每 run 的持久化序列行读取分配结果。
+- P2–P4 相关改动以提交 `80b8b46 feat(agent): deliver P2-P4 workflow and observability` 入库；未推送远程。
