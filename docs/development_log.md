@@ -1,5 +1,193 @@
 # 开发记录
 
+## 2026-08-31 P4 收口 C3：真实 MySQL 事件验证与序号修复
+
+- 宿主 Docker Desktop 已验证可用；`AgentCheckpointPersistenceIntegrationTest` 在 Testcontainers MySQL 中运行 14 项、0 失败、0 错误、0 跳过。
+- 新增的 Event 测试首次发现 `LAST_INSERT_ID()` 在连接池首次 INSERT 后可能保留旧连接值，导致 run 的第一条事件序号不是 1；已改为读取 `agent_event_sequence.nextSequence`，并同步修正 Context Snapshot 计数器。
+- MVC 回放测试覆盖 `afterSequence`、文章授权和安全 payload；MySQL 测试覆盖持久化序号、增量读取和敏感字段不落库。
+
+## 2026-08-30 P4 收口 C2：可信模型调用测量
+
+- 新增 `agent_model_call_metric` append-only 迁移与项目 DTO/服务，Token/usage 缺失保留 NULL；模型名和 usage 仅从 Spring AI 实际 response metadata 读取，流式调用记录第一条非空 chunk 的时延。
+- 现有 `WorkflowMetricsCollector` 的 run/stage scope 在阶段结束后持久化模型调用测量。当前模型端未实现自动重试，明确持久化 `retryCount=0`，不根据调用数量伪造重试数；成本仍留待 P5 版本化价格表。
+
+## 2026-08-30 P4 收口 C1：计划与实现对齐
+
+- 修正 `plan.md` 中 P4 E1–E6 的完成状态：现有 Event、运行详情、Artifact Manifest、Context Snapshot 和治理面板均保留为“部分实现”，明确记录开关、缺失数据源与测试缺口。
+- 不再将 `run://` 逻辑地址、`0→0` Token 快照、未采集的成本/首 Token 或未接入的 Flow Hooks 宣称为完整交付；C2/C3 将补可信测量和真实持久化/API 验证。
+
+## 2026-08-30 P4 E6：专项测试与验收收口
+
+- 新增 `ContextSnapshotSanitizerTest`、`AgentGovernanceMetricsCalculatorTest` 并保留 Event payload 脱敏测试，验证凭据/敏感信息清除、摘要限长、P50/P95、失败率和未采集指标语义。
+- 三项 P4 专项测试通过；此前默认后端回归 75 项和前端生产构建也已通过。P4 E1–E6 均先建立执行文档后实施并完成验收记录。
+
+## 2026-08-30 P4 E6：回归验收中的 ContextSnapshot 兼容修复
+
+- 默认后端回归 75 项、0 失败、0 错误、0 跳过，前端生产构建通过；首次重编译的 Windows 编译器资源关闭问题仍按既有方式未改代码重跑通过。
+- 回归发现 P4 E4 覆盖了 P1 的 `agent.context.ContextSnapshot` 契约，已恢复其原有构造协议并将 P4 观测 DTO 改名为 `ObservabilityContextSnapshot`，避免破坏已有 Run Artifact 契约。
+- E6 仍在实施：需要为新增事件、摘要与治理聚合补充针对性自动化测试后才可完成 P4 验收。
+
+## 2026-08-30 P4 E5：运行指标与管理治理
+
+- 新增管理员 Agent 治理聚合：仅基于 `agent_log` 状态和耗时生成成功率、平均耗时、P50/P95、慢节点和失败率提示，最大读取 10,000 条记录。
+- 未持久化的 Token、成本和首 Token 明确标识未采集，不把正文长度或推算值伪装成真实指标；管理端不显示 Prompt、输入/输出或错误正文。
+
+## 2026-08-30 P4 E3/E4：Artifact 面板与安全 Context Snapshot
+
+- Artifact 面板只展示 P3 已持久化的版本/Manifest；当前 `run://` 逻辑地址均标记为不可下载，未伪造对象存储链接。
+- 新增默认关闭的 Context Snapshot 旁路：checkpoint 后记录脱敏阶段摘要和真实可得的 Token 统计（首批为未知 `0→0`），不保存 Prompt、完整 checkpoint 或网页正文。
+- 新增文章详情中的交付物和上下文面板。后端编译、前端生产构建均通过。
+
+## 2026-08-30 P4 E2：运行详情与实时轨迹 UI
+
+- 新增授权后的 Agent Run 安全 read-model，只返回父子 Run、checkpoint 与节点的状态投影，明确不向 UI 传递 state/result snapshot 或失败原文。
+- 文章详情页新增运行轨迹面板：加载历史事件并订阅 E1 SSE，按单调 sequence 去重，组件卸载关闭流。
+- 后端编译与前端 `npm run build` 均已通过；后端首次编译仍遇已知 Windows 编译器资源关闭问题，未改代码重跑通过。
+
+## 2026-08-30 P4 E1：统一 Agent Event 与可重连回放
+
+- 新增项目自有 append-only `agent_event` 及每 run 的持久化序号分配表；事件 payload 经白名单/长度清洗，拒绝保存 Prompt、模型正文、网页正文、认证头、Cookie 和密钥。
+- 新增授权后的事件回放和 SSE 接口：先发送安全 Run 快照，随后按 `Last-Event-ID` 补发递增事件；新多订阅 emitter 与原文章 SSE 隔离，保留旧行为。
+- Run、checkpoint、节点边界的事件发布为默认关闭、best-effort 旁路，发布故障不会回滚业务状态。默认 `mvn -q test` 通过；首次两次命中已知 Windows 编译器资源关闭问题，未改代码重跑后通过。
+
+## 2026-08-30 16:25 — P3 E6 主流程迁移收口
+
+- Testcontainers 已在 Docker Desktop MySQL 上真实运行：`AgentCheckpointPersistenceIntegrationTest` 13 项、0 失败、0 错误、0 跳过，覆盖 checkpoint stateVersion/CAS 单领取、取消优先、节点副作用重用、失败重试和 append-only Artifact 版本。
+- 默认 `mvn test` 74 项、0 失败、0 错误、0 跳过；新 continue 的服务与 MVC 测试已包含在默认回归。
+- 集成启动首次暴露 `ApprovedOutlineWritingRequestFactory` 未注册为 Spring Bean，已注册为无状态 component 后通过真实 ApplicationContext 验证。
+- 收口前发现 continue 路径未送达旧 SSE 消息，已调整为缓冲图片图消息，仅在 Artifact、旧 Article 回填与 Run 完成后统一发送并 `complete` emitter；失败不发送伪完成事件。
+- P3 E6 的 feature flag 默认仍为关闭，回滚只需保持 `article.agent.quality-loop.enabled=false`；既有 Run/Artifact 审计记录不删除。
+
+## 2026-08-30  P3 E6.4：质量通过到图片交付的决策缺口
+
+- E6.3 的 `WAITING_FOR_APPROVAL` checkpoint 与旧 HTTP“单次 generateContent 即完成图片”的流程发生冲突：旧接口没有质量通过后的图片继续入口。若同一次调用直接运行图片，将绕过 checkpoint/审批/恢复边界。
+- 已新增 `p3-e6-e4_delivery_boundary_decision.md`，记录推荐方案为新增向后兼容的 quality-continue 接口，用户确认后经现有 `WorkflowRecoveryService.resume` 领取 checkpoint 再执行图片后半段。决定前不修改图片调用路径。
+
+## 2026-08-30  P3 E6.4：图片后半段边界确认
+
+- 检查旧 `ArticleAgentOrchestrator` 后确认 phase3 将 `content_generator` 与图片分析/生成/合成固定在同一 StateGraph；Runner 无法安全从中间节点继续。E6.4 执行文档已更新为先新增只含 `image_analyzer → parallel_image_generator → content_merger` 的独立图和端口，再由 P3 成功路径调用，禁止以重跑 `ContentGeneratorAgent` 作为捷径。
+
+## 2026-08-30  P3 E6.3：accepted-content checkpoint 契约与恢复适配
+
+- 新增 P3 checkpoint 白名单快照、Codec、Publisher 与恢复 Adapter。Gate 接受后发布稳定 checkpoint 并转 `WAITING_FOR_APPROVAL`；恢复仅验证 run/node/version 后回填 Markdown，绝不重跑模型、Writer、Revision 或 Artifact。
+- `P3ContentCheckpointCodecTest` 与 `P3ContentRecoveryAdapterTest` 各 2 项通过。首次增量编译继续受已知 Windows 编译器资源关闭影响，未改源码重试后通过。
+- 图片交接涉及旧 phase3 中 ContentGenerator 与图片节点耦合，先创建独立 E6.4 执行文档，尚未修改运行路径。
+
+## 2026-08-30  P3 E6.2：Runner 受控分支接入
+
+- `ArticleWorkflowRunner.generateContent` 已接入默认关闭的 `article.agent.quality-loop.enabled` 分支：关闭时保持旧 `executeContent` 路径；开启时创建/复用持久化 root run、读取实际 stateVersion、通过 typed approved-outline request 调用 `P3ContentWorkflow`，Gate 接受后只回填 Markdown 并返回 `CONTENT_QUALITY_ACCEPTED`。
+- 新增 `QUALITY_REJECTED` / `QUALITY_EXECUTION` 错误码；P3 失败或拒绝不调用旧正文图、不回填成功内容。图片、SSE 和 checkpoint 发布仍留 E6.3/E6.4，避免将质量通过错误宣称为交付完成。
+- `ArticleWorkflowRunnerTest` 4 项、0 失败、0 错误，新增断言验证 flag 开启时不调用 legacy content graph、回填 P3 Markdown 并同步持久化 run 当前节点。
+
+## 2026-08-30  P3 E6.2：正文质量通过中间阶段
+
+- 为避免 P3 正文质量通过但图片尚未生成时被误标为完整文章，新增 `WorkflowStage.CONTENT_QUALITY_ACCEPTED`。旧正文图继续仅在图片合成后返回 `ARTICLE_COMPLETED`；E6.2 的 feature-flag 分支将使用新中间阶段。
+
+## 2026-08-29  P3 E6：主流程迁移独立执行文档
+
+- 将 P3 主流程迁移重写为独立 `p3-e6_stategraph_migration_plan.md`，明确为待评审，确认前不修改 `ArticleWorkflowRunner`。文档固定全局 flag `article.agent.quality-loop.enabled=false`、免研究 Fact 审计、不允许部分交付、稳定 Outline→Task 映射、P3 状态回填、图片位置、SSE/checkpoint/HTTP 兼容与回退行为。
+- 文档附默认回归和 Testcontainers 矩阵；主流程迁移只可按 Runner 分支、checkpoint/SSE、图片交接三步执行，不能把已经存在的 P3 UseCase 当成旧 HTTP 主链路已迁移。
+
+## 2026-08-29  P3 E6.2：共享模型的受控写作/评审/修订适配器
+
+- 基于用户确认的“首版共用当前 LiteLLM / `AiModelPort`”实现 `ModelSectionWriter`、`ModelFactChecker`、`ModelStyleReviewer`、`ModelRevisionAgent` Spring Bean。每个 Adapter 要求 JSON 输出后再构造 P3 DTO；Writer/Revision 复用来源引用校验，Reviewer 拒绝跨章节问题，Style Reviewer 不返回正文。
+- 未研究时 Fact Adapter 不调用模型，返回 `FACT_ENHANCEMENT_NOT_REQUESTED` 的 MINOR 审计问题和 100 分，不阻断写作、不伪造引用；有研究时只把草稿引用与已注册来源交给模型。
+- `ModelP3AdaptersTest` 2 项、0 失败、0 错误，覆盖 Writer/Revision 伪引用拒绝、免研究 Fact 审计和跨章节 Style 问题拒绝。默认 feature flag 仍关闭，尚未使旧 HTTP 主流程进入新分支。
+
+## 2026-08-29  P3 E6.1：已审批大纲到质量写作的 typed 交接
+
+- 按确认语义新增 `ApprovedOutlineWritingRequest` / Factory：只接受已确认标题和大纲，稳定生成 `SectionTask`，不从 Prompt 或大纲文本提取 URL。未提供研究包时构造明确的“未请求事实增强” `ResearchBundle`，Fact Reviewer 后续可据此输出审计信息但不应伪造来源或强制失败。
+- 新增 `article.agent.quality-loop.enabled=false` 全局 feature flag，默认保持旧正文图。未开启或接入 Runner，因为当前生产代码尚无可复用的 P3 `SectionWriter`、Fact Checker、Style Reviewer、Revision Agent 实现；先把适配输入和开关固定，避免创建运行时必然失败的分支。
+- `ApprovedOutlineWritingRequestFactoryTest` 2 项、0 失败、0 错误，覆盖稳定章节 ID、免研究显式状态及未审批大纲拒绝。首次主/测试增量编译遇到已知 Windows 资源关闭问题，未改源码重试后通过。
+
+## 2026-08-29  P3 E5：受限质量闭环接入
+
+- 新增 `QualityRevisionWorkflowUseCase`，将既有章节 Writer durable snapshot、Fact/Style Reviewer、Quality Gate、局部 Revision、不可变版本与 Artifact 发布串为受节点幂等控制的闭环。每轮仅把 Gate 标记章节传给 Revision；`ACCEPT` 发布当前版本，`REJECT_MAX_ROUNDS` 终止而不继续修改。
+- Revision 与 Artifact 分别使用 `section-revision-{sectionId}` / `article-artifact-v{version}` 节点键重试复用。集成测试暴露 Artifact 节点把纯文本写入 MySQL JSON 快照列的问题，已改为 JSON 对象快照。
+- Testcontainers `AgentCheckpointPersistenceIntegrationTest` 扩至 11 项、0 失败、0 错误：确认首轮失败后只修订目标章节，重试不重复 Writer、Revision 或 Artifact，版本与 Manifest 均可读取。两轮拒绝与部分章节失败策略尚未补齐；后者涉及是否允许部分文章交付，需在实现前确认产品语义。
+
+## 2026-08-29  P3 E5：失败恢复与两轮终止收口
+
+- 产品决策：不允许部分文章交付。任一 Writer 章节失败时，质量闭环不进入评审、版本发布或 Artifact 交付；成功章节保留 `SUCCEEDED` child node snapshot，失败章节保留 `FAILED`，相同 run/state 重试只执行失败章节。
+- 新增 Testcontainers 覆盖上述失败/恢复路径，并覆盖连续两轮 Gate 请求 Revision 后第三次失败返回 `REJECT_MAX_ROUNDS`：只保留前两版，拒绝状态不写第三版或其 Artifact。持久化集成测试增至 13 项、0 失败、0 错误。
+- 本次不直接替换旧文章 `StateGraph` 主图：新闭环复用既有 checkpoint-compatible 节点幂等边界，主图迁移会影响现有标题/大纲/图片 HTTP 流程，应作为独立任务评估与验证，避免以 E5 测试扩展名义混入高风险迁移。
+
+## 2026-08-29  P3 E5：版本链与 Artifact 持久化阶段收口
+
+- 新增 `agent_article_version`、`agent_artifact` MySQL 迁移及 Compose 初始化挂载，并提供 `AgentArticleArtifactService`。服务以 `runId + version` 和 `runId + version + artifactId` 唯一键约束追加写入：只能在已持久化父版本之后发布，完全相同的重试返回已有版本，任何不同草稿或 Manifest 覆盖都会拒绝。
+- Testcontainers MySQL 首次暴露 `JSON` 列写回时会规范化字符串，导致同内容重试被错误判断为版本覆盖。比较已改为 JSON 树的结构等价。`AgentCheckpointPersistenceIntegrationTest` 现为 10 项、0 失败、0 错误，覆盖版本 1、版本 2 父链、三类 Artifact 哈希和同 Manifest 重试复用。
+- 尚未宣称 P3 完成：当前 Revision/Review/版本服务仍是受限 UseCase，尚未接入单一 checkpoint Workflow；因此部分章节失败、两轮 Gate 终止和版本 API 的图级集成测试仍保留为 E5 后续工作。
+
+## 2026-08-29  P3 E4：局部 Revision、版本链与 Artifact 契约
+
+- 新增 `SectionRevisionUseCase`、`SectionRevisionRequest` 与 `RevisionAgent`。只有 Quality Gate 返回 `REVISE` 时才允许进入 Revision，且每个 Agent 输入严格限制为目标章节、该章节 `SectionTask`/`ResearchBundle` 与同章节问题；未知章节、非 `REVISE` 决定、伪造引用和任务错配均会在代码侧拒绝。未被标记章节不会传给 Revision Agent，归并后继续复用原 Draft。
+- 新增不可变 `ArticleVersion` / `ArticleVersionChain`，版本必须从 1 连续追加、显式关联父版本、记录修改原因和创建时间。该实现保持为领域层 append-only 结构；未在没有确认模型的前提下新增文章版本表，持久化适配器及读取 API 将在 P3 E5 与 Run/Artifact 集成时处理。
+- 新增 `ArticleArtifactManifestFactory`，为文章 Markdown、来源包和质量报告生成稳定 `run://` 逻辑地址及 SHA-256；当前不虚构图片 Artifact，待图片交付物接入后再登记。`SectionRevisionContractTest` 3 项、0 失败、0 错误，覆盖局部改写、未标记章节保持、非法 Gate 拒绝、版本链和 Manifest 哈希。
+
+## 2026-08-29  P3 E3：并行 Reviewer 与有限 Quality Gate
+
+- 新增 Fact/Style Reviewer 端口、结构化 `ReviewReport`/`ReviewIssue`、并行 Review UseCase 与 Fact Review 输入校验。Fact Checker 只能获得 Writer 的引用 ID 与 P2 ResearchBundle，未知引用在调用前拒绝；Reviewer 不返回改写后的章节。
+- 新增由代码拥有的 Quality Gate：默认双评分均不低于 80 且不存在 blocker 才接受；失败时可请求两次局部返工，第 2 次返工后仍失败则返回 `REJECT_MAX_ROUNDS`，不允许无限循环。
+- `QualityGateContractTest` 3 项、0 失败、0 错误。E3 无数据库写入；E4 将实现 Revision Agent、版本链和 Artifact Manifest。
+
+## 2026-08-29  P3 E2：受限章节 fan-out/fan-in 与持久化重试
+
+- 新增 `ParallelSectionWritingUseCase`，以 `SupervisorScheduler` 提供最大并发和完成顺序无关的稳定归并；每个章节由父 run 派生稳定 writer child run，并经 `AgentNodeExecutionService` 的 `section-writer` 节点保存草稿快照。
+- 同一章节 child run、节点和 state version 重试时直接复用首次序列化草稿，不会再次调用 Writer。E2 当前要求全部章节成功；部分成功与降级将在 E3 的 Quality Gate 中定义，避免先引入模糊语义。
+- 离线 `ParallelSectionWritingUseCaseTest` 2 项与章节契约测试通过。Testcontainers MySQL 集成测试扩展为 9 项、0 失败、0 错误，实际断言章节重试只调用 Writer 一次、只产生一个 node execution 记录。一次测试断言最初按父 run 文本查询 child node 的 UUID runId 而返回 0，已改为使用结果中的 child run ID 精确查询；实现行为未受影响。
+
+## 2026-08-29  P3 E1：章节写作与引用交接契约
+
+- 新增 `p3_execution_plan.md`，将 P3 拆为章节契约、受限 fan-out/fan-in、双 Reviewer/Quality Gate、局部 Revision/Artifact 和集成收口五步；E1 明确只消费 P2 `ResearchBundle`，不改主图、数据库或直接调用 Tool。
+- 新增 `SectionTask`、`SectionWriterRequest`、`SectionDraft`、`SectionWriter`、`SectionDraftValidator`、`SectionFanIn`。章节所需证据以来源 ID 声明，Writer 只能返回 Bundle 中的唯一来源 ID；遗漏必需引用、伪造引用、任务错配以及重复章节均会被拒绝，归并只按 `sectionIndex` 排序。
+- 离线 `SectionWritingContractTest` 3 项、0 失败、0 错误；新增代码不需要数据库或网络。下一步为 E2：将该契约纳入受限并行 child run，而不是扩散现有 `CompletableFuture` 调度。
+
+## 2026-08-29  P2 E5：版本化 Skill Registry 收口
+
+- 新增 `p2-e5_execution_plan.md`，将 E5 限定为项目层、仓库内置的声明式 Skill 契约；不在未做框架兼容验证时绑定 `ReactAgent.read_skill`，也不允许第三方动态代码、Skill 直连 Tool 或修改 Run/checkpoint。
+- 新增五个 `1.0.0` 内置 Skill（research brief、longform article、fact check、visual plan、citation format）及精确版本 Registry、输入/输出 Schema、Tool 白名单、调用预算和验收条件校验。重复 id/version、缺失或未知字段、越权 Tool 和超预算均会被拒绝。
+- `AgentConfig` 装配 Registry/Validator；`SkillRegistryContractTest` 3 项通过。默认 `mvn test` 实际 51 项、0 失败、0 错误；Testcontainers MySQL 实际 8 项、0 失败、0 错误，确认新增 Spring Bean 不影响既有持久化链路。P3/P4 后续只能从这个项目层契约消费 Skill，不新增绕过 Gateway 的执行入口。
+
+## 2026-08-29  P2 E4：Research Agent 与 Supervisor 受控研究接入收口
+
+- 修正 E4 的边界缺陷：删除从 `SubtaskSpec.instruction` 提取 HTTPS URL 的实现，新增 `ResearchRequest`、`RegisteredSearchResult`，将查询、注册候选结果、Tool 白名单与预算固定在结构化输入中。Web Reader 只消费注册 Search 结果的 canonical URL，不接受 Supervisor 自由文本。
+- `GatewayResearchUseCase` 现在只经 E2 `ToolPolicyGateway` 调用 Web Reader，成功时保存并返回带持久化 ID 的 `ResearchSource`；失败时仅产生未验证项，绝不写来源或生成伪引用。重试会先查询同一 research run 的已保存候选来源，命中后不重复读取网页、不重复写审计。
+- `SupervisorWorkflowService` 的结构化入口要求 `ResearchRequest` 并保留稳定 child run ID；免研究路径不调用 UseCase。`AgentConfig` 已完成 Policy、URL 校验、Web Reader、Registry、持久化审计 sink 与 UseCase 的 Spring 装配。E4 不接入真实 Search 供应商，后续 Search 边界必须产生注册候选结果。
+- 验证：默认 `mvn test` 实际 48 项、0 失败、0 错误；`mvn test -Ppersistence-integration -Dtest=AgentCheckpointPersistenceIntegrationTest` 经 Testcontainers MySQL 实际 8 项、0 失败、0 错误，新增断言覆盖来源重试复用、Web Reader 仅一次与审计仅一条。首次增量编译仍受已知 Windows“无法关闭编译器资源”影响，未改源码重跑后通过。
+
+## 2026-08-29  P2 启动：受控工具与可追溯研究执行方案
+
+- 基于 P1 已完成的 Supervisor 路由、checkpoint、恢复互斥与节点幂等，新增 `p2_execution_plan.md`，将 P2 拆为研究/Tool 契约、Policy Gateway 与安全 Web Reader、来源/审计持久化、Research Agent 接入和版本化 Skill Registry 五个可独立验收的步骤。
+- 方案明确真实研究只能替换 `SupervisorWorkflowService` 中的 research 占位边界，不能将 HTTP 客户端或自由 Agent 决策直接写入 Supervisor；Tool 调用必须经过唯一 Gateway，持久化来源和审计，默认测试保持离线。P3 将只消费 P2 的结构化来源与 Skill 契约。
+- 本次仅完成 P2 的执行方案和文档索引更新，尚未声明任何真实 Search/Web Reader、来源表、Policy Gateway 或 Research Agent 已实现。
+
+## 2026-08-29  P2 E1：研究与 Tool 框架无关契约
+
+- 新增 `agent/tool` 的 `ToolId`、`ToolCallRequest`、`ToolCallResult`、`ToolAuthorization` 及 `agent/research` 的 `ResearchSource`、`ResearchSourceStatus`、`ResearchBundle`，为后续 Search/Web Reader、Policy Gateway 和 Research Agent 固定项目自有 DTO 边界，不暴露供应商 HTTP 或框架类型。
+- Tool 请求强制 run、Tool、输入、允许 Tool 集和正调用预算；授权入口拒绝越权 Tool。研究来源强制 canonical URL、标题、抓取时间、内容哈希、检索查询、状态和受限摘要；研究包要求至少有来源或未验证项，避免下游将空结果或伪引用当成事实。
+- 新增离线 `ResearchToolContractTest`，覆盖合法交接、缺失 URL、超长摘要、越权 Tool 和超预算。默认 `mvn test` 的首次主代码与第二次测试代码增量编译均遇到已知 Windows“无法关闭编译器资源”问题；未改源码的第三次执行完成，Surefire 当前 `com.passage.agent` 命名空间 45 项测试均为 0 失败、0 错误。E1 不调用公网、不写数据库，也不接入 Supervisor 主图；下一步为 E2 的唯一 Policy Gateway 与安全 Web Reader。
+
+## 2026-08-29  P2 E2：独立执行文档
+
+- 明确 P2 总执行计划只负责阶段路线与跨 E 边界；自 E2 起，每个 E 必须先建立独立 `p2-e{N}_execution_plan.md`，经范围、接口、测试矩阵、验证和回滚校验后才可开始代码实施。
+- 新增 `p2-e2_execution_plan.md`，将 E2 限定为默认拒绝的 Policy Gateway 与安全 Web Reader：覆盖唯一入口、Registry、URL/DNS/重定向校验、超时/大小限制/有限重试、内容规范化和脱敏审计，并以本地 MockWebServer/Fake DNS 作为验证基座。文档明确不接入真实搜索供应商、数据库、Research Agent 或 Supervisor 主图。
+
+## 2026-08-29  P2 E2：Policy Gateway 与安全 Web Reader
+
+- 实施默认拒绝的 `ToolRegistry`、`ToolPolicyGateway`、`ToolPolicy`、`ToolCallAuditEvent` 和稳定错误分类。调用必须先通过 E1 的允许 Tool 集与 Registry 双重校验；审计仅保留 origin、路径哈希、结果、耗时、重试与大小，不保存查询参数、Token、请求头或响应正文。
+- 新增 `UrlSafetyValidator`、可替换 `HostResolver`、`WebReaderToolAdapter` 和禁用自动重定向的 `JdkWebTransport`。Web Reader 仅允许 HTTPS/443、每次重试和重定向前重新解析与校验地址，拒绝 loopback、私网、链路本地、CGNAT、IPv6 ULA 等地址；只接受受限 `text/html`/`text/plain` 响应，移除脚本、样式、表单等内容并限制字节和文本大小。
+- 新增离线 `ToolPolicyGatewayContractTest` 4 项，以 Fake DNS/HTTP 验证越权/未知 Tool、HTTP 拒绝、私网重定向二跳阻断、503 有限重试、HTML 规范化、超大响应和非文本 MIME；不访问公网。默认 `mvn test` 首次主代码增量编译命中已知 Windows 资源关闭问题，未改源码重跑后当前命名空间 49 项、0 失败、0 错误。E2 不接入 Spring、数据库、真实 Search 或 Supervisor；下一步 E3 必须先编写独立执行文档，再实施来源与审计持久化。
+
+## 2026-08-29  P2 E3：独立执行文档
+
+- 新增 `p2-e3_execution_plan.md`，限定 E3 只持久化 `research_source` 与脱敏 `tool_call_audit`，以 `(runId, canonicalUrl, contentHash)` 复用来源，以调用尝试保留审计；不写网页正文、查询参数、Cookie、Authorization 或密钥。
+- 方案复用 P1 的 MyBatis-Flex、增量 SQL、Compose 初始化和 Testcontainers 基线；真实 Research Agent、Search 和 Supervisor 仍明确排除在 E3 之外。
+
+## 2026-08-29  P2 E3：来源与审计持久化收口
+
+- E3 的 `research_source`、`tool_call_audit` 迁移、持久化服务、Compose/README 升级说明与 Testcontainers 用例已完成；来源按 run、canonical URL 和内容哈希复用，审计不存查询参数、密钥、请求头或网页正文。
+- Docker Desktop 实际可用。以允许访问 Docker 命名管道的方式运行 `mvn test -Ppersistence-integration -Dtest=AgentCheckpointPersistenceIntegrationTest`，Testcontainers MySQL 实际执行 7 项、0 失败、0 错误、0 跳过，包含 E3 新增来源去重与审计脱敏断言。下一步已先创建 P2 E4 独立执行文档，尚未实施 E4 代码。
+
 ## 2026-08-28  架构定位：混合式 Agent Workflow
 
 - 复核 P1 已完成的持久化 Run、Supervisor 受限路由、checkpoint 恢复、取消优先与图片副作用幂等后，明确项目不应演进为由自由 Agent 自行编排全部步骤的系统，而是采用“Workflow 控制平面 + Agent 认知执行单元”的混合架构。
@@ -199,3 +387,18 @@
 - `SupervisorSchedulerContractTest` 使用 Fake Writer 验证：研究任务路由到 `RESEARCH`，非研究任务路由到 `WRITE`；三个子任务在上限 2 下运行，实际活动任务数不超过 2，最终按 `sectionIndex` 稳定归并而非按完成顺序返回。
 - 实现仅作为候选依赖的隔离 Fixture，未接入当前标题—大纲—正文业务图，也不声称已完成业务 Supervisor。
 - 使用 Microsoft OpenJDK `21.0.12.1` 执行 `mvn test` 通过，共 11 项测试。下一项为 Skill Registry 的渐进加载与权限边界；checkpoint/resume、Policy Gateway 异步 Tool 仍未验证，版本继续暂不冻结。
+## 2026-08-30 11:50 — P3 E6.4A 图片继续边界与恢复输入
+
+- 新增 `ApprovedContentImageExecutor` 及 `LegacyApprovedContentImageExecutor`，将质量通过后的交付限制为 `image_analyzer → parallel_image_generator → content_merger`；该端口只接收已确认 Markdown、标题、风格和图片方法，不能调用正文生成器。
+- `ArticleAgentOrchestrator` 新增独立 image-only StateGraph，保留旧 phase3 图和默认路径不变；图片完成事件只在图片图成功后产生。
+- 实施中发现 E6.3 checkpoint 原先仅有 Markdown，无法在不回读可变文章记录的前提下恢复图片交付。已先更新 E6.4A 执行文档，并将 allow-list snapshot 扩展为稳定的 delivery context（标题、风格、图片方法）；明确不保存 Prompt、Review 或来源正文。
+- 定向验证：`P3ContentCheckpointCodecTest`、`P3ContentRecoveryAdapterTest`、`ArticleWorkflowRunnerTest`、`LegacyApprovedContentImageExecutorTest` 共 9 项通过。Maven 的 Windows 编译器资源关闭偶发错误经原命令重试后消失。
+
+## 2026-08-30 11:56 — P3 E6.4A 继续交付服务与兼容接口
+
+- 新增 `ContentQualityContinuationService`：只可领取 `content-quality-accepted` READY checkpoint；图片结果通过持久化 node execution 保存，以便失败后的继续请求复用结果。
+- 图片完成后以质量版本为父版本发布 append-only 最终交付版本与图片 Artifact，再回填旧 `Article` 的内容/图片字段，最后才同步 Agent Run 为 `COMPLETED`。
+- 新增 `POST /api/agent-runs/{runId}/content-quality/continue`；先复用文章详情权限校验，旧文章 HTTP 接口不变。
+- 最终默认回归：`mvn test` 共 74 项通过，0 失败、0 错误、0 跳过。
+- `mvn test -Ppersistence-integration -Dtest=AgentCheckpointPersistenceIntegrationTest` 未构成验收：Docker Desktop Linux engine 命名管道不存在，Testcontainers 13 项全部跳过。Docker 守护进程恢复后必须复跑该命令并取得真实执行结果。
+- `AgentRunControllerTest` 已覆盖无请求体 continue 调用、响应结构与文章权限校验前置，定向通过。

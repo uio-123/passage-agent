@@ -4,5 +4,7 @@ package com.passage.agent.agent.api;
 public enum WorkflowStage {
     TITLES_GENERATED,
     OUTLINE_GENERATED,
+    /** P3 writing/review passed; image generation and final article delivery are still pending. */
+    CONTENT_QUALITY_ACCEPTED,
     ARTICLE_COMPLETED
 }

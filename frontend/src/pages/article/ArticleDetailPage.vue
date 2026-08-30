@@ -49,6 +49,12 @@
           </div>
 
           <a-divider />
+          <AgentRunObservabilityPanel :run-id="route.params.taskId as string" />
+          <a-divider />
+          <AgentArtifactPanel :run-id="route.params.taskId as string" />
+          <a-divider />
+          <AgentContextPanel :run-id="route.params.taskId as string" />
+          <a-divider />
 
           <!-- 执行日志面板 -->
           <div v-if="executionStats && executionStats.logs && executionStats.logs.length > 0" class="execution-logs-section">
@@ -192,6 +198,9 @@ import {
 } from '@ant-design/icons-vue'
 import { getArticle, getExecutionLogs } from '@/api/articleController'
 import { marked } from 'marked'
+import AgentRunObservabilityPanel from './components/AgentRunObservabilityPanel.vue'
+import AgentArtifactPanel from './components/AgentArtifactPanel.vue'
+import AgentContextPanel from './components/AgentContextPanel.vue'
 import dayjs from 'dayjs'
 
 const router = useRouter()

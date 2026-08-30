@@ -7,6 +7,12 @@
           <h1 class="page-title">数据分析</h1>
           <p class="page-subtitle">系统运营数据概览</p>
         </div>
+
+        <a-card :bordered="false" class="chart-card governance-card">
+          <h3 class="chart-title"><ThunderboltOutlined />Agent 运行治理</h3>
+          <div class="performance-stats"><div class="perf-item"><span class="perf-label">样本 / 成功率</span><span class="perf-value">{{ governance?.sampleCount ?? 0 }} / {{ (governance?.successRate ?? 0).toFixed(1) }}%</span></div><div class="perf-item"><span class="perf-label">P50 / P95</span><span class="perf-value">{{ governance?.p50DurationMs ?? 0 }}ms / {{ governance?.p95DurationMs ?? 0 }}ms</span></div><div class="perf-item"><span class="perf-label">Token / 成本</span><span class="perf-value unavailable">未采集</span></div></div>
+          <a-table :data-source="governance?.agents ?? []" :pagination="false" row-key="agentName" size="small"><a-table-column title="Agent" data-index="agentName"/><a-table-column title="平均耗时"><template #default="{record}">{{ Math.round(record.avgDurationMs) }}ms</template></a-table-column><a-table-column title="失败率"><template #default="{record}"><a-tag :color="record.highFailure?'error':'default'">{{ record.failureRate.toFixed(1) }}%</a-tag></template></a-table-column></a-table>
+        </a-card>
         <a-button @click="loadData" :loading="loading" class="refresh-btn">
           <template #icon>
             <ReloadOutlined />
@@ -132,9 +138,11 @@ import {
 import { getStatistics } from '@/api/statisticsController'
 import * as echarts from 'echarts'
 import type { EChartsOption } from 'echarts'
+import { getAgentGovernance, type Governance } from '@/api/agentGovernance'
 
 const loading = ref(false)
 const stats = ref<API.StatisticsVO | null>(null)
+const governance = ref<Governance | null>(null)
 
 // ECharts 实例
 const trendChartRef = ref<HTMLElement>()
@@ -150,6 +158,7 @@ const loadData = async () => {
   try {
     const res = await getStatistics()
     stats.value = res.data.data || null
+    governance.value = (await getAgentGovernance()).data.data || null
 
     // 渲染图表
     setTimeout(() => {

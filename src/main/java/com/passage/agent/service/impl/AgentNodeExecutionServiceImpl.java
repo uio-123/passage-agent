@@ -4,6 +4,9 @@ import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.spring.service.impl.ServiceImpl;
 import com.passage.agent.agent.checkpoint.NodeExecutionOutcome;
 import com.passage.agent.agent.checkpoint.NodeExecutionStatus;
+import com.passage.agent.agent.event.AgentEventInput;
+import com.passage.agent.agent.event.AgentEventPublisher;
+import com.passage.agent.agent.event.AgentEventType;
 import com.passage.agent.mapper.AgentNodeExecutionMapper;
 import com.passage.agent.model.entity.AgentNodeExecutionRecord;
 import com.passage.agent.service.AgentNodeExecutionService;
@@ -22,6 +25,8 @@ import java.util.function.Supplier;
 @Service
 public class AgentNodeExecutionServiceImpl extends ServiceImpl<AgentNodeExecutionMapper, AgentNodeExecutionRecord>
         implements AgentNodeExecutionService {
+    private final AgentEventPublisher events;
+    public AgentNodeExecutionServiceImpl(AgentEventPublisher events) { this.events = events; }
 
     @Override
     public NodeExecutionOutcome executeOnce(String runId, String nodeId, long stateVersion, Supplier<String> action) {
@@ -30,12 +35,18 @@ public class AgentNodeExecutionServiceImpl extends ServiceImpl<AgentNodeExecutio
         if (claim.reused()) {
             return new NodeExecutionOutcome(claim.executionKey(), true, claim.resultSnapshot());
         }
+        events.publish(runId, new AgentEventInput(AgentEventType.NODE_STARTED, nodeId, "workflow", 1,
+                java.util.Map.of("stateVersion", Long.toString(stateVersion))));
         try {
             String result = Objects.requireNonNull(action.get(), "node action result");
             commitSuccess(claim.executionKey(), result);
+            events.publish(runId, new AgentEventInput(AgentEventType.NODE_COMPLETED, nodeId, "workflow", 1,
+                    java.util.Map.of("stateVersion", Long.toString(stateVersion))));
             return new NodeExecutionOutcome(claim.executionKey(), false, result);
         } catch (RuntimeException exception) {
             markFailed(claim.executionKey(), exception.getMessage());
+            events.publish(runId, new AgentEventInput(AgentEventType.RUN_FAILED, nodeId, "workflow", 1,
+                    java.util.Map.of("errorCode", "NODE_EXECUTION_FAILURE")));
             throw exception;
         }
     }

@@ -30,6 +30,11 @@ services:
       - ./sql/add_vip_payment.sql:/docker-entrypoint-initdb.d/05_add_vip_payment.sql:ro
       - ./sql/add_agent_run_tables.sql:/docker-entrypoint-initdb.d/06_add_agent_run_tables.sql:ro
       - ./sql/add_agent_workflow_persistence.sql:/docker-entrypoint-initdb.d/07_add_agent_workflow_persistence.sql:ro
+      - ./sql/add_agent_research_persistence.sql:/docker-entrypoint-initdb.d/08_add_agent_research_persistence.sql:ro
+      - ./sql/add_agent_article_artifact_persistence.sql:/docker-entrypoint-initdb.d/09_add_agent_article_artifact_persistence.sql:ro
+      - ./sql/add_agent_event_persistence.sql:/docker-entrypoint-initdb.d/10_add_agent_event_persistence.sql:ro
+      - ./sql/add_agent_context_snapshot_persistence.sql:/docker-entrypoint-initdb.d/11_add_agent_context_snapshot_persistence.sql:ro
+      - ./sql/add_agent_model_call_metric_persistence.sql:/docker-entrypoint-initdb.d/12_add_agent_model_call_metric_persistence.sql:ro
     networks:
       - app-network
     healthcheck:

@@ -62,6 +62,9 @@ public class ArticleAgentOrchestrator implements ArticleWorkflowExecutor {
 
     private volatile CompiledGraph phase3CompiledGraph;
 
+    /** Image-only continuation used after the P3 quality gate has accepted markdown. */
+    private volatile CompiledGraph acceptedContentImageCompiledGraph;
+
     /** Compile immutable graph topology once for the Spring-managed production bean. */
     @PostConstruct
     void initializeCompiledGraphs() {
@@ -69,6 +72,7 @@ public class ArticleAgentOrchestrator implements ArticleWorkflowExecutor {
             phase1CompiledGraph = buildPhase1Graph().compile();
             phase2CompiledGraph = buildPhase2Graph().compile();
             phase3CompiledGraph = buildPhase3Graph().compile();
+            acceptedContentImageCompiledGraph = buildAcceptedContentImageGraph().compile();
         } catch (GraphStateException e) {
             throw new IllegalStateException("文章智能体图初始化失败", e);
         }
@@ -277,6 +281,49 @@ public class ArticleAgentOrchestrator implements ArticleWorkflowExecutor {
         }
     }
 
+    /**
+     * Delivers images for markdown that has already passed P3 quality approval.
+     * This graph intentionally starts at image analysis and never invokes ContentGeneratorAgent.
+     */
+    public void executeAcceptedContentImages(ArticleState state, Consumer<String> streamHandler) {
+        log.info("P3 quality continuation: start image delivery, taskId={}", state.getTaskId());
+        StreamHandlerContext.set(state.getTaskId(), event ->
+                streamHandler.accept(AgentStreamEventMapper.toLegacyMessage(event)));
+        try {
+            Map<String, Object> inputs = new HashMap<>();
+            inputs.put(ArticleWorkflowKeys.TASK_ID, state.getTaskId());
+            inputs.put(ArticleWorkflowKeys.MAIN_TITLE, state.getTitle().getMainTitle());
+            inputs.put(ArticleWorkflowKeys.SUB_TITLE, state.getTitle().getSubTitle());
+            inputs.put(ArticleWorkflowKeys.STYLE, state.getStyle());
+            inputs.put(ArticleWorkflowKeys.CONTENT, state.getContent());
+            inputs.put(ArticleWorkflowKeys.ENABLED_IMAGE_METHODS, state.getEnabledImageMethods());
+
+            OverAllState finalState = acceptedContentImageCompiledGraph().invoke(inputs)
+                    .orElseThrow(() -> new IllegalStateException("accepted-content image workflow returned no state"));
+            @SuppressWarnings("unchecked")
+            List<ArticleState.ImageRequirement> imageRequirements = finalState.value(ArticleWorkflowKeys.IMAGE_REQUIREMENTS)
+                    .map(value -> (List<ArticleState.ImageRequirement>) value).orElse(null);
+            @SuppressWarnings("unchecked")
+            List<ArticleState.ImageResult> images = finalState.value(ArticleWorkflowKeys.IMAGES)
+                    .map(value -> (List<ArticleState.ImageResult>) value).orElse(null);
+            String fullContent = finalState.value(ArticleWorkflowKeys.FULL_CONTENT).map(Object::toString).orElse(null);
+            if (fullContent == null || fullContent.isBlank()) {
+                throw new IllegalStateException("accepted-content image workflow returned no merged content");
+            }
+            state.setImageRequirements(imageRequirements);
+            state.setImages(images);
+            state.setFullContent(fullContent);
+            if (imageRequirements != null) streamHandler.accept(SseMessageTypeEnum.AGENT4_COMPLETE.getValue());
+            if (images != null) streamHandler.accept(SseMessageTypeEnum.AGENT5_COMPLETE.getValue());
+            streamHandler.accept(SseMessageTypeEnum.MERGE_COMPLETE.getValue());
+        } catch (Exception exception) {
+            log.error("P3 quality continuation: image delivery failed, taskId={}", state.getTaskId(), exception);
+            throw new RuntimeException("已确认正文的图片交付失败: " + exception.getMessage(), exception);
+        } finally {
+            StreamHandlerContext.clear();
+        }
+    }
+
     @Override public void executeTitles(ArticleState state, Consumer<String> handler) { executePhase1_GenerateTitles(state, handler); }
     @Override public void executeOutline(ArticleState state, Consumer<String> handler) { executePhase2_GenerateOutline(state, handler); }
     @Override public void executeContent(ArticleState state, Consumer<String> handler) { executePhase3_GenerateContent(state, handler); }
@@ -328,6 +375,18 @@ public class ArticleAgentOrchestrator implements ArticleWorkflowExecutor {
                 .addEdge("content_merger", END);
     }
 
+    private StateGraph buildAcceptedContentImageGraph() throws GraphStateException {
+        KeyStrategyFactory keyStrategyFactory = createKeyStrategyFactory();
+        return new StateGraph(keyStrategyFactory)
+                .addNode("image_analyzer", node_async(imageAnalyzerAgent))
+                .addNode("parallel_image_generator", node_async(parallelImageGenerator))
+                .addNode("content_merger", node_async(contentMergerAgent))
+                .addEdge(START, "image_analyzer")
+                .addEdge("image_analyzer", "parallel_image_generator")
+                .addEdge("parallel_image_generator", "content_merger")
+                .addEdge("content_merger", END);
+    }
+
     private CompiledGraph phase1CompiledGraph() throws GraphStateException {
         if (phase1CompiledGraph == null) {
             synchronized (this) {
@@ -359,6 +418,17 @@ public class ArticleAgentOrchestrator implements ArticleWorkflowExecutor {
             }
         }
         return phase3CompiledGraph;
+    }
+
+    private CompiledGraph acceptedContentImageCompiledGraph() throws GraphStateException {
+        if (acceptedContentImageCompiledGraph == null) {
+            synchronized (this) {
+                if (acceptedContentImageCompiledGraph == null) {
+                    acceptedContentImageCompiledGraph = buildAcceptedContentImageGraph().compile();
+                }
+            }
+        }
+        return acceptedContentImageCompiledGraph;
     }
 
     /**

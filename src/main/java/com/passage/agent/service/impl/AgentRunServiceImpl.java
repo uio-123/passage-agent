@@ -4,6 +4,9 @@ import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.spring.service.impl.ServiceImpl;
 import com.passage.agent.agent.run.AgentRun;
 import com.passage.agent.agent.run.AgentRunStatus;
+import com.passage.agent.agent.event.AgentEventInput;
+import com.passage.agent.agent.event.AgentEventPublisher;
+import com.passage.agent.agent.event.AgentEventType;
 import com.passage.agent.mapper.AgentRunMapper;
 import com.passage.agent.model.entity.AgentRunRecord;
 import com.passage.agent.service.AgentRunService;
@@ -14,6 +17,9 @@ import java.time.ZoneId;
 
 @Service
 public class AgentRunServiceImpl extends ServiceImpl<AgentRunMapper, AgentRunRecord> implements AgentRunService {
+    private final AgentEventPublisher events;
+
+    public AgentRunServiceImpl(AgentEventPublisher events) { this.events = events; }
 
     @Override
     public AgentRunRecord createRootRun(String taskId) {
@@ -27,6 +33,8 @@ public class AgentRunServiceImpl extends ServiceImpl<AgentRunMapper, AgentRunRec
                 .updateTime(now)
                 .build();
         this.save(record);
+        events.publish(record.getRunId(), new AgentEventInput(AgentEventType.RUN_STARTED, null, "workflow", 1,
+                java.util.Map.of("kind", "root")));
         return record;
     }
 
@@ -48,6 +56,8 @@ public class AgentRunServiceImpl extends ServiceImpl<AgentRunMapper, AgentRunRec
                 .updateTime(now)
                 .build();
         this.save(record);
+        events.publish(record.getRunId(), new AgentEventInput(AgentEventType.RUN_STARTED, null, "workflow", 1,
+                java.util.Map.of("kind", "child", "parentRunId", parentRunId)));
         return record;
     }
 
@@ -88,6 +98,8 @@ public class AgentRunServiceImpl extends ServiceImpl<AgentRunMapper, AgentRunRec
         record.setStatus(run.status().name());
         record.setCurrentNode(currentNode);
         this.updateById(record);
+        events.publish(run.runId(), new AgentEventInput(AgentEventType.NODE_COMPLETED, currentNode, "workflow", null,
+                java.util.Map.of("status", run.status().name())));
     }
 
     @Override
@@ -99,6 +111,8 @@ public class AgentRunServiceImpl extends ServiceImpl<AgentRunMapper, AgentRunRec
         record.setStatus(AgentRunStatus.FAILED.name());
         record.setErrorMessage(errorMessage);
         this.updateById(record);
+        events.publish(runId, new AgentEventInput(AgentEventType.RUN_FAILED, null, "workflow", null,
+                java.util.Map.of("errorCode", "WORKFLOW_FAILURE")));
     }
 
     @Override
@@ -115,6 +129,9 @@ public class AgentRunServiceImpl extends ServiceImpl<AgentRunMapper, AgentRunRec
             return false;
         }
         AgentRunRecord update = AgentRunRecord.builder().status(AgentRunStatus.CANCELLED.name()).build();
-        return this.update(update, QueryWrapper.create().eq("runId", runId).eq("status", current.name()));
+        boolean cancelled = this.update(update, QueryWrapper.create().eq("runId", runId).eq("status", current.name()));
+        if (cancelled) events.publish(runId, new AgentEventInput(AgentEventType.RUN_COMPLETED, null, "workflow", null,
+                java.util.Map.of("status", AgentRunStatus.CANCELLED.name())));
+        return cancelled;
     }
 }

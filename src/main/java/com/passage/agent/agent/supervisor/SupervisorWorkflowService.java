@@ -1,6 +1,8 @@
 package com.passage.agent.agent.supervisor;
 
 import com.passage.agent.model.entity.AgentRunRecord;
+import com.passage.agent.agent.research.ResearchBundle;
+import com.passage.agent.agent.research.ResearchUseCase;
 import com.passage.agent.service.AgentRunService;
 import org.springframework.stereotype.Service;
 
@@ -65,6 +67,14 @@ public class SupervisorWorkflowService {
             });
         }
         return new SupervisorExecutionResult(route, List.copyOf(children));
+    }
+
+    /** P2 boundary: research is a structured artifact owned by its child run, not a free Runnable. */
+    public SupervisorExecutionResult execute(String parentRunId, SupervisorPlan plan, com.passage.agent.agent.research.ResearchRequest request, ResearchUseCase research,
+                                             Function<SubtaskSpec, String> writer) {
+        if (plan.researchRequired() && request == null) throw new IllegalArgumentException("research request is required");
+        return execute(parentRunId, plan, () -> research.execute(
+                UUID.nameUUIDFromBytes((parentRunId + ":research").getBytes(java.nio.charset.StandardCharsets.UTF_8)).toString(), request), writer);
     }
 
     private String ensureChildRun(String parentRunId, String nodeKey) {

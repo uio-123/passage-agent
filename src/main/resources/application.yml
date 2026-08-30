@@ -91,3 +91,11 @@ article:
       enabled: true
     # Agent 最大迭代次数
     max-iterations: 10
+    quality-loop:
+      # P3 E6 主流程迁移开关；默认继续使用旧正文图
+      enabled: false
+      max-concurrency: 3
+    observability:
+      # P4 E1 is opt-in until event replay is deployed with its SQL migration.
+      events-enabled: false
+      context-snapshots-enabled: false

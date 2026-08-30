@@ -6,6 +6,10 @@ import com.passage.agent.agent.checkpoint.CheckpointStatus;
 import com.passage.agent.agent.checkpoint.WorkflowCheckpoint;
 import com.passage.agent.agent.run.AgentRun;
 import com.passage.agent.agent.run.AgentRunStatus;
+import com.passage.agent.agent.event.AgentEventInput;
+import com.passage.agent.agent.event.AgentEventPublisher;
+import com.passage.agent.agent.event.AgentEventType;
+import com.passage.agent.agent.context.ContextSnapshotPublisher;
 import com.passage.agent.mapper.AgentCheckpointMapper;
 import com.passage.agent.model.entity.AgentCheckpointRecord;
 import com.passage.agent.model.entity.AgentRunRecord;
@@ -13,6 +17,7 @@ import com.passage.agent.service.AgentCheckpointService;
 import com.passage.agent.service.AgentRunService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -27,9 +32,17 @@ public class AgentCheckpointServiceImpl extends ServiceImpl<AgentCheckpointMappe
         implements AgentCheckpointService {
 
     private final AgentRunService agentRunService;
+    private final AgentEventPublisher events;
+    private final ContextSnapshotPublisher contextSnapshots;
 
+    /** Kept for focused persistence tests; production Spring wiring uses the event-aware constructor. */
     public AgentCheckpointServiceImpl(AgentRunService agentRunService) {
-        this.agentRunService = agentRunService;
+        this(agentRunService, (runId, event) -> { }, (runId,nodeId,stateVersion,checkpointId,targetStatus) -> { });
+    }
+
+    @Autowired
+    public AgentCheckpointServiceImpl(AgentRunService agentRunService, AgentEventPublisher events, ContextSnapshotPublisher contextSnapshots) {
+        this.agentRunService = agentRunService; this.events = events; this.contextSnapshots = contextSnapshots;
     }
 
     @Override
@@ -61,7 +74,11 @@ public class AgentCheckpointServiceImpl extends ServiceImpl<AgentCheckpointMappe
         if (!advanced) {
             throw new IllegalStateException("Concurrent workflow state update for run: " + runId);
         }
-        return toDomain(checkpoint);
+        WorkflowCheckpoint persisted = toDomain(checkpoint);
+        events.publish(runId, new AgentEventInput(AgentEventType.CHECKPOINT_READY, nodeId, "workflow", null,
+                java.util.Map.of("stateVersion", Long.toString(nextVersion), "targetStatus", targetRunStatus.name())));
+        contextSnapshots.checkpointReady(runId,nodeId,nextVersion,checkpointId,targetRunStatus.name());
+        return persisted;
     }
 
     @Override
@@ -94,6 +111,19 @@ public class AgentCheckpointServiceImpl extends ServiceImpl<AgentCheckpointMappe
         }
         checkpoint.setStatus(CheckpointStatus.CLAIMED.name());
         checkpoint.setClaimedAt(now);
+        WorkflowCheckpoint claimedCheckpoint = toDomain(checkpoint);
+        events.publish(checkpoint.getRunId(), new AgentEventInput(AgentEventType.NODE_STARTED, checkpoint.getNodeId(), "workflow", 1,
+                java.util.Map.of("reason", "checkpoint-resume")));
+        return claimedCheckpoint;
+    }
+
+    @Override
+    public WorkflowCheckpoint findReadyCheckpoint(String runId, String nodeId) {
+        AgentCheckpointRecord checkpoint = this.getOne(QueryWrapper.create().eq("runId", runId).eq("nodeId", nodeId)
+                .eq("status", CheckpointStatus.READY.name()));
+        if (checkpoint == null) {
+            throw new IllegalStateException("No ready checkpoint for run and node: " + runId + "/" + nodeId);
+        }
         return toDomain(checkpoint);
     }
 

@@ -146,6 +146,11 @@ mysql -uroot -p < sql/create_table.sql
 mysql -uroot -p < sql/add_agent_run_tables.sql
 # Then apply the resumable-workflow checkpoint migration:
 mysql -uroot -p < sql/add_agent_workflow_persistence.sql
+# Then apply the research sources and Tool audit migration:
+mysql -uroot -p < sql/add_agent_research_persistence.sql
+
+# Then apply the P3 article-version and Artifact Manifest migration:
+mysql -uroot -p < sql/add_agent_article_artifact_persistence.sql
 ```
 
 ### 2. 配置 API Key
@@ -207,7 +212,7 @@ Docker 可用时，可执行 P1 持久化集成测试；该 Profile 会创建并
 mvn test -Ppersistence-integration
 ```
 
-P1 已提供 Supervisor 受限路由、持久化 checkpoint、取消优先恢复和图片副作用幂等：同一图片节点在 checkpoint 尚未推进时重试，会复用已保存的首次结果，不会再次调用图片服务。真实研究 Tool、统一超时/预算/审计仍属于后续 P2。
+P1 已提供 Supervisor 受限路由、持久化 checkpoint、取消优先恢复和图片副作用幂等：同一图片节点在 checkpoint 尚未推进时重试，会复用已保存的首次结果，不会再次调用图片服务。P2 E1–E5 已补充受控 Web Reader 与版本化内置 Skill Registry：研究只能读取已注册 Search 结果提供的 HTTPS 候选 URL，并经 Policy Gateway 持久化脱敏审计与来源；失败不会生成伪引用，重试复用已有来源。P4 已新增默认关闭的安全可观测能力：可回放 Agent Event、运行轨迹、Artifact Manifest、Context Snapshot 及管理员耗时/失败率聚合。该能力不记录 Prompt、模型正文或密钥；当前 Token 和成本尚未被可信采集，界面会明确显示“未采集”。
 
 ### 4. 启动前端
 

@@ -18,6 +18,8 @@ public interface AgentCheckpointService extends IService<AgentCheckpointRecord> 
 
     WorkflowCheckpoint claimForResume(String checkpointId);
 
+    WorkflowCheckpoint findReadyCheckpoint(String runId, String nodeId);
+
     void consumeClaim(String checkpointId);
 
     void releaseClaim(String checkpointId);

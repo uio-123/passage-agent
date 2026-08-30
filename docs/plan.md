@@ -439,15 +439,19 @@ P0-B 的执行顺序、验收、回滚与阶段门禁见 `p0-b_execution_plan.md
 
 目标：在既有 Workflow 控制底座内，用版本化 Skill 封装创作 SOP，让 Agent 按需使用受控工具并产出可追溯资料。
 
+P2 的具体顺序、不可变边界、安全门禁、验收与回滚见 [p2_execution_plan.md](p2_execution_plan.md)；先实施框架无关的研究/Tool 契约与 Policy Gateway，再接入真实网页读取和 Research Agent。
+
 P2 的边界：Workflow 负责 Skill 选择后的状态推进、Tool Policy、预算、超时、审计和来源持久化；Supervisor / Skill Resolver / Research Agent 只在已授权的 Skill 与 Tool 集内进行开放式判断，不能直接调用基础设施或修改 Run 状态。
 
-- [ ] 实现双层 Skill 机制：框架层使用 `ReactAgent` 的 `read_skill` 按需渐进加载 Skill 内容；项目层实现 Skill Definition、Skill Registry、Schema 校验和版本管理，交付首批五个内置 Skills。
-- [ ] 项目层 Skill Registry 负责 Skill 版本、输入输出契约、`allowedTools`、预算、验收条件和审计；不重复实现框架的按需内容加载，也不开放第三方代码热执行。
+- [ ] 框架层 `ReactAgent.read_skill` 按需渐进加载仍待独立兼容验证；项目层已完成 Skill Definition、Registry、Schema 校验、版本管理与首批五个内置 Skills。
+- [x] 项目层 Skill Registry 已负责 Skill 版本、输入输出契约、`allowedTools`、预算与验收条件；不重复实现框架按需内容加载，也不开放第三方代码热执行。执行审计仍由后续 Skill Resolver 接入现有审计边界。
 - [ ] Supervisor/Skill Resolver 根据用户目标选择 Skill；所有 Skill 必须声明 allowedTools、预算和验收条件。
-- [ ] 实现 Tool Registry、Search Tool、Web Reader Tool 及来源数据模型。
-- [ ] 在 Tool Registry 前增加轻量 Policy Gateway，统一处理白名单、超时、重试、并发、预算、审批和审计。
+- [ ] 实现受注册的 Search Tool；Web Reader、Tool Registry 与来源数据模型已在 P2 E1–E4 完成。
+- [x] 已建立框架无关的研究/Tool 最小契约：`ToolId`、调用请求/结果、授权入口、`ResearchSource` 与 `ResearchBundle`；真实 Tool、Registry 和来源持久化仍待 P2 后续 E2–E4。
+- [x] 已完成 Policy Gateway 的白名单、超时、有限重试、预算请求校验与脱敏审计；并发预算账户和审批策略仍留待后续阶段。
+- [x] 已完成 P2 E2 的默认拒绝 Policy Gateway 与安全 Web Reader 基线：未授权/未知 Tool、URL/DNS/重定向、响应限额、文本 MIME、有限重试与脱敏内存审计均由离线契约覆盖；数据库审计持久化、并发预算账户和主图接入仍留给后续 E3/E4。
 - [ ] 对相互独立、只读的检索/网页读取 Tool 使用框架的异步与并行执行能力；`returnDirect` 仅用于已批准的低风险场景，且不得绕过 Policy Gateway、Artifact 校验和质量门禁。
-- [ ] 实现 Research Agent 的检索、去重、摘要和来源冲突标记。
+- [ ] 完成 Research Agent 的受注册 Search、去重、摘要和来源冲突标记；P2 E4 已完成受控 Web Reader、来源持久化、失败降级与重试复用。
 - [ ] 大纲声明章节证据需求，Writer 使用引用 ID，最终文章生成参考资料。
 - [ ] 增加网页 Prompt 注入隔离、域名/协议限制、抓取超时和内容长度限制。
 - [ ] 增加安全回归样例：重定向到内网地址、DNS 重绑定、IPv4/IPv6 回环/私网/链路本地及云元数据地址、恶意网页指令、敏感 Token 脱敏、越权 Skill/Tool，以及 `returnDirect` 试图绕过 Policy/质量门禁；每次重定向均重新解析并校验目标地址。
@@ -461,12 +465,13 @@ P2 的边界：Workflow 负责 Skill 选择后的状态推进、Tool Policy、�
 
 P3 的边界：Workflow 负责章节任务拆分后的依赖、并发上限、稳定归并、质量门禁、最多两轮返工及版本持久化；Writer、Fact Checker、Style Reviewer、Revision Agent 仅生成结构化产物或修改建议。是否重试、返工范围和何时结束由代码校验 Agent 输出后决定。
 
-- [ ] 将大纲拆为 `SectionTask` 并通过框架并行条件边动态 fan-out，多个 Writer 并行生成章节。
+- [ ] 已完成 `SectionTask`、Writer 输入输出、引用 ID 交接和有界 child-run fan-out/fan-in；框架并行条件边动态接入仍待后续图迁移。
 - [ ] 使用框架 `allOf` / `anyOf` 聚合策略实现稳定 fan-in；明确每类任务的“全部成功”或“允许部分成功”语义、最大并发、稳定归并顺序、部分失败重试和单章节降级。
-- [ ] 并行运行 Fact Checker 与 Style Reviewer，输出结构化评分和问题定位。
-- [ ] 实现 Quality Gate 与 Revision Agent，只返工不合格章节，最多两轮。
-- [ ] 保存文章版本链和 Agent 修改原因，提供版本 diff 数据接口。
-- [ ] Chief Editor 生成 `ArtifactManifest`，统一登记最终 Markdown、来源、图片和质量报告并完成哈希/完整性校验。
+- [ ] 已完成并行 Fact Checker / Style Reviewer 的结构化评分与问题定位契约；真实模型绑定及 Run 持久化留待后续接入。
+- [ ] 已完成 Quality Gate 的代码阈值、最多两轮终止规则和 Gate 标记章节的局部 Revision；将 Gate/Revision 接入主图循环仍待 E5。
+- [ ] 已完成不可变文章版本链、修改原因和 MySQL 追加持久化；版本 diff 查询 API 待 E5 的 Workflow/API 集成。
+- [ ] 已完成 Markdown、来源包、质量报告的 `ArtifactManifest` 稳定引用、SHA-256 与 MySQL 登记；图片 Artifact 登记和真实存储完整性校验待既有图片结果接入后完成。
+- [x] 已完成 P3 E6 质量闭环接入旧文章主流程：默认关闭的 `article.agent.quality-loop.enabled` 分支、typed approved-outline 映射、accepted-content checkpoint、质量确认 continue 接口、独立图片图、旧文章回填、Artifact 追加版本与 SSE 延迟完成均已接入；默认回归 74 项与 Testcontainers 持久化回归 13 项均通过。免研究仍以非阻塞 `FACT_ENHANCEMENT_NOT_REQUESTED` 审计语义处理。
 - [ ] 对比串行/并行耗时、单 Agent/多 Agent 质量和额外成本，形成量化报告。
 - [ ] 从开发回归集中维护最小质量门槛：结构化输出可解析、引用可访问且与结论关联、质量门禁在两轮内终止；主观质量评分只作为辅助信号，不能替代这些可验证断言。
 
@@ -476,14 +481,12 @@ P3 的边界：Workflow 负责章节任务拆分后的依赖、并发上限、�
 
 目标：让多 Agent 协作过程“看得见”，增强演示表现和排障能力。
 
-- [ ] 重构 SSE 为统一 Agent Event 流，支持事件序号、断线续传和历史回放。
-- [ ] 通过 Flow Agent Hooks 统一采集策略检查、节点指标与审计事件；适配 `streamMessages` 到项目自有 SSE 事件协议，不把框架事件格式直接暴露给前端。
-- [ ] 新增任务详情页：Agent DAG、父子 Run、实时节点状态、Skill/工具调用、评审分数、版本变化。
-- [ ] 新增交付物面板：展示文章、来源、图片、质量报告的 Artifact 状态、版本和下载入口。
-- [ ] 实现 Context Manager 与阶段性 Context Snapshot，在 UI 中仅展示安全摘要和压缩前后 Token 变化。
-- [ ] 新增运行指标：Token、估算成本、首 Token 时间、总耗时、重试次数和失败原因。
-- [ ] 新增管理端聚合指标及慢节点/高失败率告警视图。
-- [ ] 为流式事件顺序、重连补发和敏感信息脱敏补充测试。
+- [ ] P4 E1（部分实现）：已建立默认关闭的 append-only Agent Event、单 run 序号、`Last-Event-ID` 补发和安全 Run 快照；尚未接入 Flow Agent Hooks 或 `streamMessages`，且真实事件序号/重连持久化测试在 C3。
+- [ ] P4 E2（部分实现）：文章详情已展示安全 Run/read-model、节点状态与实时事件时间线；尚未展示 Skill/Tool 调用、评审分数及完整 DAG 关系。
+- [ ] P4 E3（部分实现）：已展示不可变版本与 Artifact Manifest；当前 `run://` 仅为逻辑地址，文章、来源、图片和质量报告尚无受控下载对象。
+- [ ] P4 E4（部分实现）：已提供默认关闭的安全 Context Snapshot 和摘要面板；尚未实现 Context Manager 或实际压缩前后 Token 数据。
+- [ ] P4 E5（部分实现）：管理员可查看基于 `agent_log` 的耗时、P50/P95 与失败率；可信 Token、模型、首 Token、成本和重试采集在 C2。
+- [ ] P4 E6（部分实现）：默认回归、前端构建和部分脱敏/指标单测已通过；完整 API/Testcontainers 验证和演示收口在 C3/C4。
 
 验收：一次完整演示无需查看后端日志即可说明每个 Agent 的输入、输出、耗时、路由和返工原因。
 

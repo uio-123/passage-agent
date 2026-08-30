@@ -6,6 +6,10 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import com.passage.agent.agent.research.ResearchBundle;
+import com.passage.agent.agent.research.ResearchRequest;
+import com.passage.agent.agent.research.RegisteredSearchResult;
+import com.passage.agent.agent.tool.ToolId;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -57,5 +61,19 @@ class SupervisorWorkflowServiceTest {
         assertThat(result.children()).extracting(SupervisorWorkflowService.ChildExecution::content)
                 .containsExactly(null, "facts-1", "write-2");
         verify(runs, org.mockito.Mockito.times(3)).createChildRun(anyString(), org.mockito.ArgumentMatchers.eq("parent"));
+    }
+
+    @Test
+    void passesTheDurableResearchChildRunToStructuredResearchUseCase() {
+        AgentRunService runs = mock(AgentRunService.class);
+        when(runs.getByRunId(anyString())).thenReturn(null);
+        SupervisorWorkflowService service = new SupervisorWorkflowService(new SupervisorPlanValidator(), new SupervisorScheduler(), runs);
+        AtomicInteger calls = new AtomicInteger();
+        service.execute("parent", new SupervisorPlan(true, 1, List.of(new SubtaskSpec(0, "write", "draft"))),
+                new ResearchRequest("facts", List.of(new RegisteredSearchResult("search-1", "https://example.com/facts", "Facts", null)),
+                        Set.of(ToolId.WEB_READER), 1),
+                (runId, request) -> { calls.incrementAndGet(); return new ResearchBundle(runId, List.of(), List.of(), List.of("unavailable")); },
+                subtask -> "content");
+        assertThat(calls).hasValue(1);
     }
 }
