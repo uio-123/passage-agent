@@ -2,6 +2,7 @@ package com.passage.agent.agent.writing;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.passage.agent.agent.llm.AiModelPort;
+import com.passage.agent.agent.llm.StructuredJsonExtractor;
 import com.passage.agent.agent.research.ResearchSource;
 import org.springframework.stereotype.Component;
 
@@ -29,7 +30,7 @@ public class ModelSectionWriter implements SectionWriter {
                 + "\nNever invent citation IDs or URLs.";
     }
     private <T> T read(String prompt, Class<T> type) {
-        try { return objectMapper.readValue(model.complete(prompt), type); }
+        try { return objectMapper.readValue(StructuredJsonExtractor.extract(model.complete(prompt)), type); }
         catch (Exception exception) { throw new IllegalArgumentException("Writer model output is not valid structured JSON", exception); }
     }
     public record Response(String markdown, List<String> citationSourceIds) { }

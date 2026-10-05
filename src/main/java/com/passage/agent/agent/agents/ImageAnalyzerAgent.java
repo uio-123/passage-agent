@@ -24,6 +24,8 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class ImageAnalyzerAgent implements NodeAction {
 
+    public static final String NO_IMAGE_METHOD = "NONE";
+
     private final AiModelPort aiModel;
 
     public static final String INPUT_MAIN_TITLE = ArticleWorkflowKeys.MAIN_TITLE;
@@ -51,6 +53,14 @@ public class ImageAnalyzerAgent implements NodeAction {
                     return null;
                 })
                 .orElse(null);
+
+        if (enabledMethods != null && enabledMethods.size() == 1
+                && NO_IMAGE_METHOD.equalsIgnoreCase(enabledMethods.getFirst())) {
+            return Map.of(
+                    OUTPUT_CONTENT_WITH_PLACEHOLDERS, content,
+                    INPUT_CONTENT, content,
+                    OUTPUT_IMAGE_REQUIREMENTS, List.of());
+        }
         
         log.info("ImageAnalyzerAgent 开始执行: mainTitle={}, enabledMethods={}", mainTitle, enabledMethods);
         

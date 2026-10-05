@@ -64,14 +64,18 @@ public class QualityRevisionWorkflowUseCase {
         if (drafts.isEmpty()) throw new IllegalArgumentException("Quality workflow requires at least one section draft");
         ArticleVersionChain versions = ArticleVersionChain.initial(drafts, "initial draft", Instant.now());
         int completedRounds = 0;
+        Evaluation evaluation = null;
         while (true) {
-            QualityGateDecision decision = evaluate(drafts, research, factChecker, styleReviewer, completedRounds);
+            evaluation = evaluate(drafts, research, factChecker, styleReviewer, completedRounds);
+            QualityGateDecision decision = evaluation.decision();
             if (decision.decision() == QualityGateDecision.Decision.REJECT_MAX_ROUNDS) {
-                return new QualityWorkflowResult(decision, versions, drafts);
+                return new QualityWorkflowResult(decision, versions, drafts,
+                        evaluation.averageFactScore(), evaluation.averageStyleScore());
             }
             publish(runId, stateVersion + completedRounds, versions.latest(), research, decision);
             if (decision.decision() == QualityGateDecision.Decision.ACCEPT) {
-                return new QualityWorkflowResult(decision, versions, drafts);
+                return new QualityWorkflowResult(decision, versions, drafts,
+                        evaluation.averageFactScore(), evaluation.averageStyleScore());
             }
             RevisionResult revised = revision.revise(tasks, drafts, research, decision, request -> deserialize(nodes.executeOnce(
                     runId, "section-revision-" + request.originalDraft().sectionId(), stateVersion + decision.completedRevisionRounds(),
@@ -82,19 +86,31 @@ public class QualityRevisionWorkflowUseCase {
         }
     }
 
-    private QualityGateDecision evaluate(List<SectionDraft> drafts, ResearchBundle research, FactChecker factChecker,
-                                         StyleReviewer styleReviewer, int completedRounds) {
-        List<QualityGateDecision> decisions = drafts.stream().map(draft -> gate.evaluate(
-                reviewing.review(draft, research, factChecker, styleReviewer), completedRounds)).toList();
+    private Evaluation evaluate(List<SectionDraft> drafts, ResearchBundle research, FactChecker factChecker,
+                                StyleReviewer styleReviewer, int completedRounds) {
+        List<ParallelSectionReviewUseCase.ReviewPair> reviews = drafts.stream()
+                .map(draft -> reviewing.review(draft, research, factChecker, styleReviewer))
+                .toList();
+        List<QualityGateDecision> decisions = reviews.stream()
+                .map(review -> gate.evaluate(review, completedRounds))
+                .toList();
         List<ReviewIssue> issues = decisions.stream().flatMap(decision -> decision.issues().stream()).toList();
+        double averageFactScore = reviews.stream().mapToInt(review -> review.fact().score()).average().orElse(0);
+        double averageStyleScore = reviews.stream().mapToInt(review -> review.style().score()).average().orElse(0);
         if (decisions.stream().anyMatch(decision -> decision.decision() == QualityGateDecision.Decision.REJECT_MAX_ROUNDS)) {
-            return new QualityGateDecision(QualityGateDecision.Decision.REJECT_MAX_ROUNDS, completedRounds, issues);
+            return new Evaluation(new QualityGateDecision(
+                    QualityGateDecision.Decision.REJECT_MAX_ROUNDS, completedRounds, issues),
+                    averageFactScore, averageStyleScore);
         }
         if (decisions.stream().anyMatch(decision -> decision.decision() == QualityGateDecision.Decision.REVISE)) {
             if (issues.isEmpty()) throw new IllegalArgumentException("A REVISE decision requires at least one section issue");
-            return new QualityGateDecision(QualityGateDecision.Decision.REVISE, completedRounds + 1, issues);
+            return new Evaluation(new QualityGateDecision(
+                    QualityGateDecision.Decision.REVISE, completedRounds + 1, issues),
+                    averageFactScore, averageStyleScore);
         }
-        return new QualityGateDecision(QualityGateDecision.Decision.ACCEPT, completedRounds, issues);
+        return new Evaluation(new QualityGateDecision(
+                QualityGateDecision.Decision.ACCEPT, completedRounds, issues),
+                averageFactScore, averageStyleScore);
     }
 
     private void publish(String runId, long versionState, ArticleVersion version, ResearchBundle research, QualityGateDecision decision) {
@@ -114,7 +130,10 @@ public class QualityRevisionWorkflowUseCase {
         catch (JsonProcessingException exception) { throw new IllegalStateException("Revision snapshot is invalid", exception); }
     }
 
-    public record QualityWorkflowResult(QualityGateDecision decision, ArticleVersionChain versions, List<SectionDraft> drafts) {
+    public record QualityWorkflowResult(QualityGateDecision decision, ArticleVersionChain versions, List<SectionDraft> drafts,
+                                        double averageFactScore, double averageStyleScore) {
         public QualityWorkflowResult { drafts = List.copyOf(drafts); }
     }
+
+    private record Evaluation(QualityGateDecision decision, double averageFactScore, double averageStyleScore) { }
 }

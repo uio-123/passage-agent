@@ -2,6 +2,7 @@ package com.passage.agent.agent.review;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.passage.agent.agent.llm.AiModelPort;
+import com.passage.agent.agent.llm.StructuredJsonExtractor;
 import com.passage.agent.agent.writing.SectionDraft;
 import org.springframework.stereotype.Component;
 import java.util.List;
@@ -17,6 +18,6 @@ public class ModelStyleReviewer implements StyleReviewer {
         if (report.issues().stream().anyMatch(issue -> !issue.sectionId().equals(draft.sectionId()))) throw new IllegalArgumentException("Style reviewer returned a cross-section issue");
         return report;
     }
-    private <T> T read(String prompt, Class<T> type) { try { return objectMapper.readValue(model.complete(prompt), type); } catch (Exception e) { throw new IllegalArgumentException("Style reviewer output is not valid structured JSON", e); } }
+    private <T> T read(String prompt, Class<T> type) { try { return objectMapper.readValue(StructuredJsonExtractor.extract(model.complete(prompt)), type); } catch (Exception e) { throw new IllegalArgumentException("Style reviewer output is not valid structured JSON", e); } }
     public record Response(int score, List<ReviewIssue> issues) { }
 }

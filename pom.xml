@@ -17,7 +17,7 @@
         <java.version>21</java.version>
         <spring-ai.version>1.1.2</spring-ai.version>
         <spring-ai-alibaba-agent-framework.version>1.1.2.2</spring-ai-alibaba-agent-framework.version>
-        <test.excluded-groups>litellm-smoke,persistence-integration</test.excluded-groups>
+        <test.excluded-groups>litellm-smoke,persistence-integration,harness-staging</test.excluded-groups>
     </properties>
     <dependencies>
         <!-- Spring Boot Web -->
@@ -248,6 +248,13 @@
             <properties>
                 <groups>persistence-integration</groups>
                 <test.excluded-groups>litellm-smoke</test.excluded-groups>
+            </properties>
+        </profile>
+        <profile>
+            <id>harness-staging</id>
+            <properties>
+                <groups>harness-staging</groups>
+                <test.excluded-groups>litellm-smoke,persistence-integration</test.excluded-groups>
             </properties>
         </profile>
     </profiles>

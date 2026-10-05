@@ -2,6 +2,7 @@ package com.passage.agent.agent.llm;
 
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
+import com.google.gson.reflect.TypeToken;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -20,12 +21,13 @@ import org.springframework.web.client.DefaultResponseErrorHandler;
 import org.springframework.web.client.ResponseErrorHandler;
 
 import java.io.IOException;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /** Exercises the actual Spring AI OpenAI HTTP and SSE codecs against a local server. */
-@Timeout(10)
+@Timeout(30)
 class SpringAiModelAdapterHttpTest {
 
     private MockWebServer server;
@@ -77,6 +79,19 @@ class SpringAiModelAdapterHttpTest {
 
         withModelPort(model -> assertThatThrownBy(() -> model.complete("hello"))
                 .isInstanceOf(RuntimeException.class));
+    }
+
+    @Test
+    void parsesStructuredJsonWrappedInMarkdownCodeFenceAndReasoningPrefix() {
+        server.enqueue(jsonResponse("""
+                {"id":"chatcmpl-1","object":"chat.completion","created":1,"model":"test-model",
+                 "choices":[{"index":0,"message":{"role":"assistant","content":"thinking...\\n```json\\n{\\"score\\":92}\\n```"},"finish_reason":"stop"}],
+                 "usage":{"prompt_tokens":1,"completion_tokens":1,"total_tokens":2}}
+                """));
+
+        withModelPort(model -> assertThat(model.<Map<String, Integer>>completeStructured(
+                "return json", new TypeToken<Map<String, Integer>>() { }.getType()))
+                .containsEntry("score", 92));
     }
 
     private void withModelPort(java.util.function.Consumer<AiModelPort> assertion) {

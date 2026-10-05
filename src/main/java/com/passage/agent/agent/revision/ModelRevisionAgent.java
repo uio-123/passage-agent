@@ -2,6 +2,7 @@ package com.passage.agent.agent.revision;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.passage.agent.agent.llm.AiModelPort;
+import com.passage.agent.agent.llm.StructuredJsonExtractor;
 import com.passage.agent.agent.writing.SectionDraft;
 import com.passage.agent.agent.writing.SectionDraftValidator;
 import org.springframework.stereotype.Component;
@@ -20,6 +21,6 @@ public class ModelRevisionAgent implements RevisionAgent {
         validator.validate(request.writerRequest(), draft);
         return draft;
     }
-    private <T> T read(String prompt, Class<T> type) { try { return objectMapper.readValue(model.complete(prompt), type); } catch (Exception e) { throw new IllegalArgumentException("Revision model output is not valid structured JSON", e); } }
+    private <T> T read(String prompt, Class<T> type) { try { return objectMapper.readValue(StructuredJsonExtractor.extract(model.complete(prompt)), type); } catch (Exception e) { throw new IllegalArgumentException("Revision model output is not valid structured JSON", e); } }
     public record Response(String markdown, List<String> citationSourceIds) { }
 }

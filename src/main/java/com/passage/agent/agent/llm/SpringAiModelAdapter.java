@@ -44,7 +44,10 @@ public class SpringAiModelAdapter implements AiModelPort {
         long started = System.nanoTime();
         java.util.concurrent.atomic.AtomicLong firstToken = new java.util.concurrent.atomic.AtomicLong(-1);
         return chatModel.stream(new Prompt(new UserMessage(prompt)))
-                .map(response -> response.getResult().getOutput().getText())
+                .map(response -> {
+                    String text = response.getResult().getOutput().getText();
+                    return text == null ? "" : text;
+                })
                 .filter(chunk -> chunk != null && !chunk.isEmpty())
                 .doOnNext(chunk -> firstToken.compareAndSet(-1, elapsed(started)))
                 .doOnComplete(() -> metricsCollector.recordModelMeasurement(new ModelCallMeasurement(
@@ -53,7 +56,7 @@ public class SpringAiModelAdapter implements AiModelPort {
 
     @Override
     public <T> T completeStructured(String prompt, Type responseType) {
-        T result = GsonUtils.fromJson(complete(prompt), responseType);
+        T result = GsonUtils.fromJson(StructuredJsonExtractor.extract(complete(prompt)), responseType);
         if (result == null) {
             throw new IllegalStateException("模型未返回可解析的结构化结果");
         }

@@ -2,6 +2,7 @@ package com.passage.agent.agent.review;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.passage.agent.agent.llm.AiModelPort;
+import com.passage.agent.agent.llm.StructuredJsonExtractor;
 import org.springframework.stereotype.Component;
 import java.util.List;
 
@@ -19,6 +20,6 @@ public class ModelFactChecker implements FactChecker {
         if (report.issues().stream().anyMatch(issue -> !issue.sectionId().equals(request.draft().sectionId()))) throw new IllegalArgumentException("Fact reviewer returned a cross-section issue");
         return report;
     }
-    private <T> T read(String prompt, Class<T> type) { try { return objectMapper.readValue(model.complete(prompt), type); } catch (Exception e) { throw new IllegalArgumentException("Fact reviewer output is not valid structured JSON", e); } }
+    private <T> T read(String prompt, Class<T> type) { try { return objectMapper.readValue(StructuredJsonExtractor.extract(model.complete(prompt)), type); } catch (Exception e) { throw new IllegalArgumentException("Fact reviewer output is not valid structured JSON", e); } }
     public record Response(int score, List<ReviewIssue> issues) { }
 }

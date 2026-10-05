@@ -1,6 +1,6 @@
 # Agent Harness 化改造执行计划
 
-> 状态：H0–H3 `DONE`；H4–H5 未启动
+> 状态：H0–H4 `DONE`；H5 未启动
 > 日期：2026-10-05
 > 基线标签：`baseline-before-harness`
 > 目标：在不破坏现有主链路的前提下，把已经存在的 Run、Checkpoint、Planner、Tool、Reviewer、Event 等能力收口为可验证的 Agent Harness，并用小规模真实任务证明收益后再扩大范围。
@@ -56,6 +56,7 @@ StateManager 只管理持久状态
 | Harness H1 | `DONE` | `AgentHarness` 与 `StateManager` 纯委托门面已实现，默认路径未切换 |
 | Harness H2 | `DONE` | 版本化 Plan、Reviewer/Human Feedback 与规则驱动 Replan 已实现；仅更新计划状态，未切换执行主链路 |
 | Harness H3 | `DONE` | 角色化 Context、ToolExecutor 与受限 TaskWorkspace 已实现；仍未接入默认执行链路 |
+| Harness H4 | `DONE` | 五任务真实模型 staging 完成；Harness 5/5 成功，但净收益未证明，默认开关保持关闭 |
 
 `docs/plan.md` 中各阶段的历史复选框保留为实施记录，不再作为当前状态的唯一事实来源；本矩阵和各阶段执行文档必须保持一致。
 
@@ -164,10 +165,14 @@ Approved Outline
 
 ### H4：五任务 Staging 对比
 
+> 状态：`DONE`（2026-10-06）；结论：不切换默认开关。完整摘要见
+> [H4 staging result](../harness/H4_STAGING_REPORT.md)。
+
 - 使用真实模型比对旧 Workflow 与 Harness Workflow。
 - 固定覆盖普通创作、长任务、Reviewer 返工、人工修改和失败恢复。
 - 记录任务成功率、质量、人工修改次数、耗时、Token、Tool 调用、重试和恢复成功率。
 - 验收：至少 5/5 完成任务；无重复副作用；形成 Harness 是否带来净收益的书面结论。
+- 实际结果：旧 Workflow 与 Harness 均 5/5 成功；Harness 平均耗时约增加 64%，16 次模型调用、38,575 Token；恢复与人工 Replan 检查通过；Reviewer 返工未触发；旧链路 Token/调用指标不可得。
 
 ### H5：按证据决定后续范围
 

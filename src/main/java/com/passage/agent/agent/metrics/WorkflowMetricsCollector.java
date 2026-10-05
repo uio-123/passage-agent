@@ -11,10 +11,12 @@ import com.passage.agent.service.AgentModelCallMetricService;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
 /**
@@ -25,12 +27,22 @@ import java.util.function.Supplier;
 public class WorkflowMetricsCollector {
 
     private final ConcurrentMap<String, MutableExecutionMetrics> executions = new ConcurrentHashMap<>();
-    private final ThreadLocal<StageScope> activeStage = new ThreadLocal<>();
+    private final InheritableThreadLocal<StageScope> activeStage = new InheritableThreadLocal<>();
     private final AgentModelCallMetricService modelCallMetrics;
 
     /** Compatibility constructor for isolated workflow unit tests; production wiring persists measurements. */
     public WorkflowMetricsCollector() {
-        this((runId, stage, attempt, callIndex, measurement) -> { });
+        this(new AgentModelCallMetricService() {
+            @Override
+            public void record(String runId, String stage, int attempt, int callIndex,
+                               com.passage.agent.agent.metrics.ModelCallMeasurement measurement) {
+            }
+
+            @Override
+            public List<com.passage.agent.model.entity.AgentModelCallMetricRecord> listByRunId(String runId) {
+                return List.of();
+            }
+        });
     }
 
     @Autowired
@@ -46,12 +58,12 @@ public class WorkflowMetricsCollector {
         long startedAt = System.nanoTime();
         try {
             WorkflowExecutionResult result = operation.get();
-            record(runId, new WorkflowStageMetrics(stage, elapsed(startedAt), scope.modelCallCount,
+            record(runId, new WorkflowStageMetrics(stage, elapsed(startedAt), scope.modelCallCount(),
                     result.state().run().status(), null));
             persistModelCalls(runId, stage, scope);
             return result;
         } catch (WorkflowExecutionException exception) {
-            record(runId, new WorkflowStageMetrics(stage, elapsed(startedAt), scope.modelCallCount,
+            record(runId, new WorkflowStageMetrics(stage, elapsed(startedAt), scope.modelCallCount(),
                     AgentRunStatus.FAILED, exception.error().code()));
             persistModelCalls(runId, stage, scope);
             throw exception;
@@ -68,7 +80,7 @@ public class WorkflowMetricsCollector {
     public void recordModelCall() {
         StageScope scope = activeStage.get();
         if (scope != null) {
-            scope.modelCallCount++;
+            scope.incrementModelCall();
         }
     }
 
@@ -76,13 +88,14 @@ public class WorkflowMetricsCollector {
     public void recordModelMeasurement(ModelCallMeasurement measurement) {
         StageScope scope = activeStage.get();
         if (scope != null) {
-            scope.measurements.add(measurement);
+            scope.add(measurement);
         }
     }
 
     private void persistModelCalls(String runId, WorkflowStage stage, StageScope scope) {
-        for (int index = 0; index < scope.measurements.size(); index++) {
-            modelCallMetrics.record(runId, stage.name(), 1, index + 1, scope.measurements.get(index));
+        List<ModelCallMeasurement> measurements = scope.snapshotMeasurements();
+        for (int index = 0; index < measurements.size(); index++) {
+            modelCallMetrics.record(runId, stage.name(), 1, index + 1, measurements.get(index));
         }
     }
 
@@ -100,8 +113,26 @@ public class WorkflowMetricsCollector {
     }
 
     private static final class StageScope {
-        private int modelCallCount;
-        private final List<ModelCallMeasurement> measurements = new ArrayList<>();
+        private final AtomicInteger modelCallCount = new AtomicInteger();
+        private final List<ModelCallMeasurement> measurements = Collections.synchronizedList(new ArrayList<>());
+
+        int incrementModelCall() {
+            return modelCallCount.incrementAndGet();
+        }
+
+        int modelCallCount() {
+            return modelCallCount.get();
+        }
+
+        void add(ModelCallMeasurement measurement) {
+            measurements.add(measurement);
+        }
+
+        List<ModelCallMeasurement> snapshotMeasurements() {
+            synchronized (measurements) {
+                return List.copyOf(measurements);
+            }
+        }
     }
 
     private static final class MutableExecutionMetrics {

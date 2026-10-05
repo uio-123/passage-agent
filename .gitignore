@@ -71,4 +71,10 @@ src/main/resources/application-local.yml
 # Local evaluation review work (may contain reviewer notes)
 evaluation/work/
 
+# Timestamped staging runs are local evidence; curated summaries live in harness/H4_STAGING_REPORT.md
+harness/reports/
+
+# Timestamped staging runs are local evidence; curated summaries live in harness/H4_STAGING_REPORT.md
+harness/reports/
+
 .claude/**

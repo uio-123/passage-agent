@@ -1,0 +1,60 @@
+[
+  {
+    "id": "normal",
+    "sourceSampleId": "p5-technology-07",
+    "scenarioType": "NORMAL",
+    "topic": "为初学者解释缓存",
+    "style": "educational",
+    "title": "缓存到底解决了什么问题",
+    "outlineSections": [
+      "用生活类比解释缓存、命中与失效"
+    ]
+  },
+  {
+    "id": "long",
+    "sourceSampleId": "p5-technology-10",
+    "scenarioType": "LONG_TASK",
+    "topic": "一次温和的架构迁移",
+    "style": "tech",
+    "title": "一次温和的架构迁移",
+    "outlineSections": [
+      "解释迁移的真实动机与约束",
+      "给出分阶段迁移方案",
+      "说明回滚条件与复盘方式"
+    ]
+  },
+  {
+    "id": "review-revision",
+    "sourceSampleId": "p5-education-01",
+    "scenarioType": "REVIEW_REVISION",
+    "topic": "间隔检索课堂试验",
+    "style": "educational",
+    "title": "间隔检索课堂试验复盘",
+    "outlineSections": [
+      "描述课堂设计与练习节奏",
+      "说明观察结果、局限与下一步"
+    ]
+  },
+  {
+    "id": "human-modify",
+    "sourceSampleId": "p5-emotion-05",
+    "scenarioType": "HUMAN_MODIFY",
+    "topic": "远方家人的周日仪式",
+    "style": "emotional",
+    "title": "远方家人的周日仪式",
+    "outlineSections": [
+      "讲述距离、固定联系和不完美坚持"
+    ]
+  },
+  {
+    "id": "failure-recovery",
+    "sourceSampleId": "p5-education-05",
+    "scenarioType": "FAILURE_RECOVERY",
+    "topic": "教师备课助手试用",
+    "style": "educational",
+    "title": "教师备课助手试用说明",
+    "outlineSections": [
+      "说明试用范围、观察变化和教师审核责任"
+    ]
+  }
+]

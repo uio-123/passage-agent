@@ -7,6 +7,8 @@ import com.passage.agent.agent.agents.ImageAnalyzerAgent;
 import com.passage.agent.agent.agents.OutlineGeneratorAgent;
 import com.passage.agent.agent.agents.TitleGeneratorAgent;
 import com.passage.agent.agent.api.WorkflowErrorCode;
+import com.passage.agent.agent.api.WorkflowExecutionResult;
+import com.passage.agent.agent.api.WorkflowStage;
 import com.passage.agent.agent.fixture.ArticleWorkflowFixture;
 import com.passage.agent.agent.llm.MetricsCollectingAiModelPort;
 import com.passage.agent.agent.parallel.ParallelImageGenerator;
@@ -18,6 +20,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -64,6 +69,22 @@ class WorkflowMetricsCollectorTest {
         assertThat(metrics.resultStatus().name()).isEqualTo("FAILED");
         assertThat(metrics.errorCode()).isEqualTo(WorkflowErrorCode.INVALID_STATE);
         assertThat(metrics.stages().getFirst().modelCallCount()).isZero();
+    }
+
+    @Test
+    void capturesModelCallsFromWorkerThreadsCreatedInsideTheStage() {
+        WorkflowMetricsCollector collector = new WorkflowMetricsCollector();
+        WorkflowState state = ArticleWorkflowFixture.workflowState("parallel-metrics-run", "parallel-task");
+
+        collector.measure("parallel-metrics-run", WorkflowStage.ARTICLE_COMPLETED, () -> {
+            try (ExecutorService executor = Executors.newFixedThreadPool(2)) {
+                CompletableFuture.runAsync(collector::recordModelCall, executor).join();
+            }
+            return new WorkflowExecutionResult(state, WorkflowStage.ARTICLE_COMPLETED);
+        });
+
+        assertThat(collector.find("parallel-metrics-run").orElseThrow().stages().getFirst().modelCallCount())
+                .isEqualTo(1);
     }
 
     private ArticleState.TitleResult title(String mainTitle, String subTitle) {

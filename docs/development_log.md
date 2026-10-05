@@ -1,5 +1,14 @@
 # 开发记录
 
+## 2026-10-06 H4：五任务真实模型 Staging 对比
+
+- 新增 `harness-staging` Maven Profile、五条可追溯场景、真实 LiteLLM 执行器和安全报告输出；固定标题与大纲，只比较正文生成、评审和交付边界。
+- 完整运行中旧 Workflow 与 Harness 均 5/5 成功；Harness 平均约 61.3 秒、16 次模型调用、38,575 Token，较旧 Workflow 平均增加约 64% 耗时。恢复检查、人工 MODIFY→Replan 和重复副作用检查通过。
+- H4 暴露并修复：流式 chunk 为 null 导致 NPE；P3 结构化适配器无法解析 Markdown JSON 围栏；并行模型调用丢失 metrics scope；空图片列表被解释为允许全部图片方式。
+- 所有 Harness 任务首轮即 ACCEPT，Reviewer 返工未实际触发；旧 Workflow 的响应式线程未进入度量 scope，其模型调用和 Token 标记为 `UNAVAILABLE`，没有伪造为 0。
+- 后续确认运行在上游 LiteLLM 调用处卡顿约 20 分钟，说明 H4 当前结论可保留，但模型供应商稳定性尚不足以作为发布门禁。
+- 结论：不切换 `article.agent.quality-loop.enabled` 默认值。详细 staging 报告见 `harness/H4_STAGING_REPORT.md`。
+
 ## 2026-10-05 CI 前端干净构建修复
 
 - GitHub Actions 的 L1 前端 Job 在干净 checkout 中失败：源码导入 `@/config/env`，但 `frontend/src/config/env.ts` 被 `.gitignore` 排除，仅在本地存在。
