@@ -1,6 +1,6 @@
 # Agent Harness 化改造执行计划
 
-> 状态：H0–H2 `DONE`；H3–H5 未启动
+> 状态：H0–H3 `DONE`；H4–H5 未启动
 > 日期：2026-10-05
 > 基线标签：`baseline-before-harness`
 > 目标：在不破坏现有主链路的前提下，把已经存在的 Run、Checkpoint、Planner、Tool、Reviewer、Event 等能力收口为可验证的 Agent Harness，并用小规模真实任务证明收益后再扩大范围。
@@ -55,6 +55,7 @@ StateManager 只管理持久状态
 | Harness H0 | `DONE` | 本文档、基线矩阵、状态统一和基线提交 |
 | Harness H1 | `DONE` | `AgentHarness` 与 `StateManager` 纯委托门面已实现，默认路径未切换 |
 | Harness H2 | `DONE` | 版本化 Plan、Reviewer/Human Feedback 与规则驱动 Replan 已实现；仅更新计划状态，未切换执行主链路 |
+| Harness H3 | `DONE` | 角色化 Context、ToolExecutor 与受限 TaskWorkspace 已实现；仍未接入默认执行链路 |
 
 `docs/plan.md` 中各阶段的历史复选框保留为实施记录，不再作为当前状态的唯一事实来源；本矩阵和各阶段执行文档必须保持一致。
 
@@ -149,14 +150,17 @@ Approved Outline
 - 第一阶段由代码规则决定继续、局部重写或补研究；LLM Planner 继续放在 Feature Flag 后。
 - HITL 的 `MODIFY` / `REJECT` 进入状态更新和 Replan，而不是只恢复原节点。
 - 验收：普通、返工、人工修改和拒绝四类路径可重复测试。
-- 实现边界：`RuleBasedPlanReplanner` 根据 Fact/Style Review 和 HITL 决策生成新的版本化 `SupervisorPlan`；计划状态更新已完成，Run 持久化、HTTP 审批入口和前端展示仍留给 H3/H4。
+- 实现边界：`RuleBasedPlanReplanner` 根据 Fact/Style Review 和 HITL 决策生成新的版本化 `SupervisorPlan`；计划状态更新已完成，Run 持久化、HTTP 审批入口和前端展示仍留给后续 H4/H5。
 
 ### H3：Context 与 Tool Runtime
+
+> 状态：`DONE`（2026-10-05）；新增 9 项契约测试，完整后端回归 159 项通过。
 
 - 新增 Agent 级 Context Assembly、选择和 Token 上限；第一阶段不做自动压缩。
 - 统一现有 Tool Registry、Policy 和 Audit 的执行边界，新增 ToolContext 与 ToolExecutor。
 - 定义 `TaskWorkspace` 端口；本地目录实现仅用于受控环境，Artifact 持久化记录仍是最终事实来源。
 - 验收：不同 Agent 只获得职责所需上下文；越权 Tool 和跨任务 Workspace 访问被拒绝。
+- 实现边界：`BoundedContextAssembler` 使用角色白名单、必填项和估算预算；`DefaultToolExecutor` 只包装现有 `ToolPolicyGateway`；`LocalTaskWorkspace` 不是 Spring Bean，只允许显式受控使用。
 
 ### H4：五任务 Staging 对比
 

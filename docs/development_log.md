@@ -1,5 +1,13 @@
 # 开发记录
 
+## 2026-10-05 H3：角色化 Context、ToolExecutor 与 TaskWorkspace
+
+- 新增 `AgentContext`、`ContextAssemblyRequest`、`ContextAssembler` 和 `BoundedContextAssembler`。不同 Agent 角色只能获得自身白名单内的 Context，缺少必填上下文时拒绝执行，超出预算的非必填项被排除，不实现自动摘要或压缩。
+- `AgentHarness` 增加 `assembleContext`；Context Snapshot 继续只作为 P4 观测摘要，没有被当作 Agent 输入上下文。
+- 新增 `ToolContext`、`ToolExecutor` 和 `DefaultToolExecutor`，统一从 Agent 级授权和预算构造 `ToolCallRequest`，实际执行仍完全委托现有 `ToolPolicyGateway`、Registry 和 Audit。
+- 新增 `WorkspaceArea`、`TaskWorkspace` 和 `LocalTaskWorkspace`。本地实现仅限显式受控场景，不允许绝对路径或 `../` 逃逸，不同 taskId 相互隔离；Artifact 数据库记录仍是最终交付事实来源。
+- 新增 9 项契约测试；定向测试通过，完整默认后端回归 159 项、0 失败、0 错误、0 跳过。Controller、默认开关、主执行图和现有 SSE 路径未修改。
+
 ## 2026-10-05 H2：版本化 Plan 与规则驱动 Replan
 
 - `SupervisorPlan` 向后兼容地增加 `version`、`parentVersion` 和 `revisionReason`；原有三参数与五参数构造仍创建版本 1 的初始计划。

@@ -2,10 +2,15 @@ package com.passage.agent.agent.harness;
 
 import com.passage.agent.agent.api.WorkflowExecutionResult;
 import com.passage.agent.agent.checkpoint.WorkflowCheckpoint;
+import com.passage.agent.agent.context.AgentContext;
+import com.passage.agent.agent.context.ContextAssemblyRequest;
 import com.passage.agent.agent.supervisor.HumanDecision;
 import com.passage.agent.agent.supervisor.PlanFeedback;
 import com.passage.agent.agent.supervisor.ReplanResult;
 import com.passage.agent.agent.supervisor.SupervisorPlan;
+import com.passage.agent.agent.tool.ToolCallResult;
+import com.passage.agent.agent.tool.ToolContext;
+import com.passage.agent.agent.tool.ToolId;
 
 import java.util.function.Consumer;
 
@@ -24,4 +29,8 @@ public interface AgentHarness {
     ReplanResult replan(SupervisorPlan plan, PlanFeedback feedback);
 
     ReplanResult handleHumanDecision(SupervisorPlan plan, HumanDecision decision);
+
+    AgentContext assembleContext(ContextAssemblyRequest request);
+
+    ToolCallResult executeTool(ToolContext context, ToolId toolId, String input);
 }

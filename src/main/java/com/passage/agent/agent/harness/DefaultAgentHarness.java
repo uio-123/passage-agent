@@ -3,11 +3,18 @@ package com.passage.agent.agent.harness;
 import com.passage.agent.agent.api.WorkflowExecutionResult;
 import com.passage.agent.agent.api.WorkflowRunner;
 import com.passage.agent.agent.checkpoint.WorkflowCheckpoint;
+import com.passage.agent.agent.context.AgentContext;
+import com.passage.agent.agent.context.ContextAssembler;
+import com.passage.agent.agent.context.ContextAssemblyRequest;
 import com.passage.agent.agent.supervisor.HumanDecision;
 import com.passage.agent.agent.supervisor.PlanFeedback;
 import com.passage.agent.agent.supervisor.PlanReplanner;
 import com.passage.agent.agent.supervisor.ReplanResult;
 import com.passage.agent.agent.supervisor.SupervisorPlan;
+import com.passage.agent.agent.tool.ToolCallResult;
+import com.passage.agent.agent.tool.ToolContext;
+import com.passage.agent.agent.tool.ToolExecutor;
+import com.passage.agent.agent.tool.ToolId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -21,15 +28,21 @@ public class DefaultAgentHarness implements AgentHarness {
     private final WorkflowRunner workflowRunner;
     private final StateManager stateManager;
     private final PlanReplanner planReplanner;
+    private final ContextAssembler contextAssembler;
+    private final ToolExecutor toolExecutor;
 
     @Autowired
     public DefaultAgentHarness(
             WorkflowRunner workflowRunner,
             StateManager stateManager,
-            PlanReplanner planReplanner) {
+            PlanReplanner planReplanner,
+            ContextAssembler contextAssembler,
+            ToolExecutor toolExecutor) {
         this.workflowRunner = Objects.requireNonNull(workflowRunner, "workflowRunner");
         this.stateManager = Objects.requireNonNull(stateManager, "stateManager");
         this.planReplanner = Objects.requireNonNull(planReplanner, "planReplanner");
+        this.contextAssembler = Objects.requireNonNull(contextAssembler, "contextAssembler");
+        this.toolExecutor = Objects.requireNonNull(toolExecutor, "toolExecutor");
     }
 
     @Override
@@ -60,5 +73,15 @@ public class DefaultAgentHarness implements AgentHarness {
     @Override
     public ReplanResult handleHumanDecision(SupervisorPlan plan, HumanDecision decision) {
         return replan(plan, PlanFeedback.human(decision));
+    }
+
+    @Override
+    public AgentContext assembleContext(ContextAssemblyRequest request) {
+        return contextAssembler.assemble(request);
+    }
+
+    @Override
+    public ToolCallResult executeTool(ToolContext context, ToolId toolId, String input) {
+        return toolExecutor.execute(context, toolId, input);
     }
 }

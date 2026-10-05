@@ -4,6 +4,9 @@ import com.passage.agent.agent.api.WorkflowExecutionResult;
 import com.passage.agent.agent.api.WorkflowRunner;
 import com.passage.agent.agent.api.WorkflowStage;
 import com.passage.agent.agent.checkpoint.WorkflowCheckpoint;
+import com.passage.agent.agent.context.AgentContext;
+import com.passage.agent.agent.context.ContextAssembler;
+import com.passage.agent.agent.context.ContextAssemblyRequest;
 import com.passage.agent.agent.fixture.ArticleWorkflowFixture;
 import com.passage.agent.agent.review.QualityGateDecision;
 import com.passage.agent.agent.review.ReviewReport;
@@ -15,6 +18,10 @@ import com.passage.agent.agent.supervisor.PlanFeedback;
 import com.passage.agent.agent.supervisor.PlanReplanner;
 import com.passage.agent.agent.supervisor.ReplanResult;
 import com.passage.agent.agent.supervisor.SupervisorPlan;
+import com.passage.agent.agent.tool.ToolCallResult;
+import com.passage.agent.agent.tool.ToolContext;
+import com.passage.agent.agent.tool.ToolExecutor;
+import com.passage.agent.agent.tool.ToolId;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -33,7 +40,10 @@ class AgentHarnessContractTest {
         WorkflowRunner runner = mock(WorkflowRunner.class);
         StateManager stateManager = mock(StateManager.class);
         PlanReplanner planner = mock(PlanReplanner.class);
-        DefaultAgentHarness harness = new DefaultAgentHarness(runner, stateManager, planner);
+        ContextAssembler contextAssembler = mock(ContextAssembler.class);
+        ToolExecutor toolExecutor = mock(ToolExecutor.class);
+        DefaultAgentHarness harness = new DefaultAgentHarness(
+                runner, stateManager, planner, contextAssembler, toolExecutor);
         WorkflowState state = ArticleWorkflowFixture.workflowState("run-h1", "task-h1");
         Consumer<String> streamHandler = ignored -> { };
         WorkflowExecutionResult expected = new WorkflowExecutionResult(state, WorkflowStage.TITLES_GENERATED);
@@ -51,7 +61,7 @@ class AgentHarnessContractTest {
         verify(runner).generateTitles(state, streamHandler);
         verify(runner).generateOutline(state, streamHandler);
         verify(runner).generateContent(state, streamHandler);
-        verifyNoMoreInteractions(runner, stateManager, planner);
+        verifyNoMoreInteractions(runner, stateManager, planner, contextAssembler, toolExecutor);
     }
 
     @Test
@@ -59,7 +69,10 @@ class AgentHarnessContractTest {
         WorkflowRunner runner = mock(WorkflowRunner.class);
         StateManager stateManager = mock(StateManager.class);
         PlanReplanner planner = mock(PlanReplanner.class);
-        DefaultAgentHarness harness = new DefaultAgentHarness(runner, stateManager, planner);
+        ContextAssembler contextAssembler = mock(ContextAssembler.class);
+        ToolExecutor toolExecutor = mock(ToolExecutor.class);
+        DefaultAgentHarness harness = new DefaultAgentHarness(
+                runner, stateManager, planner, contextAssembler, toolExecutor);
         Consumer<WorkflowCheckpoint> nextNode = ignored -> { };
         when(stateManager.cancelRun("run-h1")).thenReturn(true);
 
@@ -68,7 +81,7 @@ class AgentHarnessContractTest {
 
         verify(stateManager).resumeCheckpoint("checkpoint-h1", nextNode);
         verify(stateManager).cancelRun("run-h1");
-        verifyNoMoreInteractions(runner, stateManager, planner);
+        verifyNoMoreInteractions(runner, stateManager, planner, contextAssembler, toolExecutor);
     }
 
     @Test
@@ -76,7 +89,10 @@ class AgentHarnessContractTest {
         WorkflowRunner runner = mock(WorkflowRunner.class);
         StateManager stateManager = mock(StateManager.class);
         PlanReplanner planner = mock(PlanReplanner.class);
-        DefaultAgentHarness harness = new DefaultAgentHarness(runner, stateManager, planner);
+        ContextAssembler contextAssembler = mock(ContextAssembler.class);
+        ToolExecutor toolExecutor = mock(ToolExecutor.class);
+        DefaultAgentHarness harness = new DefaultAgentHarness(
+                runner, stateManager, planner, contextAssembler, toolExecutor);
         SupervisorPlan plan = new SupervisorPlan(false, 1, List.of());
         PlanFeedback feedback = PlanFeedback.reviewer(
                 new ReviewReport(ReviewType.FACT, 90, List.of()),
@@ -92,6 +108,35 @@ class AgentHarnessContractTest {
 
         verify(planner).replan(plan, feedback);
         verify(planner).replan(plan, PlanFeedback.human(human));
-        verifyNoMoreInteractions(runner, stateManager, planner);
+        verifyNoMoreInteractions(runner, stateManager, planner, contextAssembler, toolExecutor);
+    }
+
+    @Test
+    void delegatesContextAssemblyAndToolExecutionToTheirBoundaries() {
+        WorkflowRunner runner = mock(WorkflowRunner.class);
+        StateManager stateManager = mock(StateManager.class);
+        PlanReplanner planner = mock(PlanReplanner.class);
+        ContextAssembler contextAssembler = mock(ContextAssembler.class);
+        ToolExecutor toolExecutor = mock(ToolExecutor.class);
+        DefaultAgentHarness harness = new DefaultAgentHarness(
+                runner, stateManager, planner, contextAssembler, toolExecutor);
+        ContextAssemblyRequest request = new ContextAssemblyRequest("run-h3", AgentContext.Role.WRITER,
+                new AgentContext.Budget(100, 10), List.of());
+        AgentContext context = new AgentContext("run-h3", AgentContext.Role.WRITER, List.of(),
+                new AgentContext.Budget(100, 10));
+        ToolContext toolContext = new ToolContext("run-h3", "writer",
+                java.util.Set.of(ToolId.WEB_READER), 1);
+        ToolCallResult result = new ToolCallResult(ToolId.WEB_READER, List.of(), java.time.Duration.ZERO);
+        when(contextAssembler.assemble(request)).thenReturn(context);
+        when(toolExecutor.execute(toolContext, ToolId.WEB_READER, "https://example.com"))
+                .thenReturn(result);
+
+        assertThat(harness.assembleContext(request)).isSameAs(context);
+        assertThat(harness.executeTool(toolContext, ToolId.WEB_READER, "https://example.com"))
+                .isSameAs(result);
+
+        verify(contextAssembler).assemble(request);
+        verify(toolExecutor).execute(toolContext, ToolId.WEB_READER, "https://example.com");
+        verifyNoMoreInteractions(runner, stateManager, planner, contextAssembler, toolExecutor);
     }
 }

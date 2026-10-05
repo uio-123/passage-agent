@@ -662,7 +662,7 @@ GET    /api/skills                        查询可用内置 Skills 及版本
 1. H0 已完成：P5 当前工程已提交并建立 `baseline-before-harness`。
 2. H1 已完成：`AgentHarness` 与 `StateManager` 已作为现有 Runner、Run、Checkpoint 和 Recovery 的纯委托门面落地。
 3. H2 已完成：版本化 Supervisor Plan、Reviewer/Human Feedback 和规则驱动 Replan 已落地，尚未持久化到主 Run。
-4. 执行 H3：实现 Agent 级 Context、Tool Runtime 和受控 TaskWorkspace。
+4. H3 已完成：Agent 级 Context、ToolExecutor 和受控 TaskWorkspace 已落地，尚未接入默认执行链路。
 5. 执行 H4：用 5 个真实任务比较旧 Workflow 与 Harness Workflow，再按证据决定 Memory、正式 P5 和默认开关。
 
 ## 12. 设计参考与使用边界
