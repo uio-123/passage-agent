@@ -659,8 +659,8 @@ GET    /api/skills                        查询可用内置 Skills 及版本
 
 ## 11. 下一步执行顺序
 
-1. 执行 H0：提交 P5 当前工程并建立 `baseline-before-harness`，不改变默认行为。
-2. 执行 H1：新增 `AgentHarness` 与 `StateManager` 统一门面，委托现有 Runner、Run、Checkpoint 和 Recovery 服务。
+1. H0 已完成：P5 当前工程已提交并建立 `baseline-before-harness`。
+2. H1 已完成：`AgentHarness` 与 `StateManager` 已作为现有 Runner、Run、Checkpoint 和 Recovery 的纯委托门面落地。
 3. 执行 H2：扩展现有 Supervisor Plan，接入 Reviewer Feedback、Replan 与 HITL 状态更新。
 4. 执行 H3：实现 Agent 级 Context、Tool Runtime 和受控 TaskWorkspace。
 5. 执行 H4：用 5 个真实任务比较旧 Workflow 与 Harness Workflow，再按证据决定 Memory、正式 P5 和默认开关。

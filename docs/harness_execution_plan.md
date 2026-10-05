@@ -1,6 +1,6 @@
 # Agent Harness 化改造执行计划
 
-> 状态：H0 `DONE`；H1–H5 未启动
+> 状态：H0、H1 `DONE`；H2–H5 未启动
 > 日期：2026-10-05
 > 基线标签：`baseline-before-harness`
 > 目标：在不破坏现有主链路的前提下，把已经存在的 Run、Checkpoint、Planner、Tool、Reviewer、Event 等能力收口为可验证的 Agent Harness，并用小规模真实任务证明收益后再扩大范围。
@@ -53,6 +53,7 @@ StateManager 只管理持久状态
 | P4 | `STAGING` | Event/Replay、Run Detail、Artifact/Context 面板和模型调用测量已实现；默认关闭，受控下载、完整 DAG 和上下文压缩仍缺失 |
 | P5 | `DRAFT` | 评测、CI、压测和 Demo 工具已实现；30 条数据未裁决，正式评测与性能基线未接受 |
 | Harness H0 | `DONE` | 本文档、基线矩阵、状态统一和基线提交 |
+| Harness H1 | `DONE` | `AgentHarness` 与 `StateManager` 纯委托门面已实现，默认路径未切换 |
 
 `docs/plan.md` 中各阶段的历史复选框保留为实施记录，不再作为当前状态的唯一事实来源；本矩阵和各阶段执行文档必须保持一致。
 
@@ -130,10 +131,13 @@ Approved Outline
 
 ### H1：Harness Facade 与 StateManager
 
+> 状态：`DONE`（2026-10-05）；新增 4 项契约测试，完整后端回归 145 项通过。
+
 - 新增 `AgentHarness`，委托现有 `WorkflowRunner`、运行查询、恢复和取消能力。
 - 新增 `StateManager` 统一门面，内部复用 `AgentRunService`、`AgentCheckpointService` 和 `WorkflowRecoveryService`。
 - 不改变现有 API、SSE、数据库语义和默认路径。
 - 验收：旧路径行为不变；新旧入口契约测试通过；不得出现双写状态。
+- 实现边界：`AgentTask` 只支持标题、大纲、正文三类现有动作；`run()` 按类型转发到 `WorkflowRunner`，`resume()` / `cancel()` 转发到 `StateManager`，没有引入新的持久化或执行引擎。
 
 ### H2：Planner、Reviewer Feedback 与 Replan
 

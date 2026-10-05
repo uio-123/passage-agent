@@ -1,5 +1,12 @@
 # 开发记录
 
+## 2026-10-05 H1：AgentHarness 与 StateManager 纯委托门面
+
+- 新增 `AgentTask` / `AgentHarness`，以标题、大纲、正文三类现有动作统一进入 `WorkflowRunner`；`resume` 与 `cancel` 只委托现有状态管理边界，没有接入 Controller 或修改默认执行路径。
+- 新增 `StateManager` / `DefaultStateManager`，统一封装 `AgentRunService`、`AgentCheckpointService` 和 `WorkflowRecoveryService`，避免创建第二套 Run、Checkpoint 或状态存储。
+- 新增 4 项契约测试，验证所有任务类型、恢复、取消、Run 持久化和 Checkpoint 操作都是单向委托，且没有额外交互。
+- 定向测试通过；完整默认后端回归 145 项、0 失败、0 错误、0 跳过。H1 不包含 Planner、Replan、Memory、Context Assembly 或默认开关切换，这些仍属于 H2+。
+
 ## 2026-10-05 H0：Harness 前基线与文档状态收口
 
 - 新增 `harness_execution_plan.md`，统一使用 `DONE / STAGING / IN_PROGRESS / DRAFT` 四档状态，明确 P3/P4 是默认关闭的 `STAGING`，P2 是 `IN_PROGRESS`，P5 是 `DRAFT`。
