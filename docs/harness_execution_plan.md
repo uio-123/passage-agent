@@ -1,6 +1,6 @@
 # Agent Harness 化改造执行计划
 
-> 状态：H0、H1 `DONE`；H2–H5 未启动
+> 状态：H0–H2 `DONE`；H3–H5 未启动
 > 日期：2026-10-05
 > 基线标签：`baseline-before-harness`
 > 目标：在不破坏现有主链路的前提下，把已经存在的 Run、Checkpoint、Planner、Tool、Reviewer、Event 等能力收口为可验证的 Agent Harness，并用小规模真实任务证明收益后再扩大范围。
@@ -54,6 +54,7 @@ StateManager 只管理持久状态
 | P5 | `DRAFT` | 评测、CI、压测和 Demo 工具已实现；30 条数据未裁决，正式评测与性能基线未接受 |
 | Harness H0 | `DONE` | 本文档、基线矩阵、状态统一和基线提交 |
 | Harness H1 | `DONE` | `AgentHarness` 与 `StateManager` 纯委托门面已实现，默认路径未切换 |
+| Harness H2 | `DONE` | 版本化 Plan、Reviewer/Human Feedback 与规则驱动 Replan 已实现；仅更新计划状态，未切换执行主链路 |
 
 `docs/plan.md` 中各阶段的历史复选框保留为实施记录，不再作为当前状态的唯一事实来源；本矩阵和各阶段执行文档必须保持一致。
 
@@ -141,11 +142,14 @@ Approved Outline
 
 ### H2：Planner、Reviewer Feedback 与 Replan
 
+> 状态：`DONE`（2026-10-05）；新增 5 项契约测试，完整后端回归 150 项通过。
+
 - 扩展现有 `SupervisorPlan` / `SubtaskSpec`，增加计划版本和 Replan 原因。
 - Reviewer 只输出结构化问题和建议动作，不能直接决定重写、研究或配图。
 - 第一阶段由代码规则决定继续、局部重写或补研究；LLM Planner 继续放在 Feature Flag 后。
 - HITL 的 `MODIFY` / `REJECT` 进入状态更新和 Replan，而不是只恢复原节点。
 - 验收：普通、返工、人工修改和拒绝四类路径可重复测试。
+- 实现边界：`RuleBasedPlanReplanner` 根据 Fact/Style Review 和 HITL 决策生成新的版本化 `SupervisorPlan`；计划状态更新已完成，Run 持久化、HTTP 审批入口和前端展示仍留给 H3/H4。
 
 ### H3：Context 与 Tool Runtime
 

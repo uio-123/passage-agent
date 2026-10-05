@@ -1,5 +1,13 @@
 # 开发记录
 
+## 2026-10-05 H2：版本化 Plan 与规则驱动 Replan
+
+- `SupervisorPlan` 向后兼容地增加 `version`、`parentVersion` 和 `revisionReason`；原有三参数与五参数构造仍创建版本 1 的初始计划。
+- 新增 `PlanFeedback`、`HumanDecision`、`ReplanResult`、`PlanAction` 和 `RuleBasedPlanReplanner`。Reviewer 只提供 Fact/Style 结构化问题，代码规则决定 `CONTINUE`、`REVISE_SECTIONS`、`REQUEST_RESEARCH`、`REPLAN` 或 `STOP`。
+- Fact 的 BLOCKER/MAJOR 问题触发补研究；Style/一般返工问题只修改受影响章节的 Replan 指令；达到返工上限时停止；人工 APPROVE 继续，MODIFY/REJECT 生成新的计划版本。
+- `AgentHarness` 增加 Replan 与人工决策入口，继续通过现有 Planner 边界委托。计划版本更新目前只发生在领域对象中，尚未持久化到 `agent_run`，也未接入 HTTP 审批或前端。
+- 新增 5 项契约测试；定向测试通过，完整默认后端回归 150 项、0 失败、0 错误、0 跳过。
+
 ## 2026-10-05 H1：AgentHarness 与 StateManager 纯委托门面
 
 - 新增 `AgentTask` / `AgentHarness`，以标题、大纲、正文三类现有动作统一进入 `WorkflowRunner`；`resume` 与 `cancel` 只委托现有状态管理边界，没有接入 Controller 或修改默认执行路径。
