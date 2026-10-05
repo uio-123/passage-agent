@@ -1,5 +1,11 @@
 # 开发记录
 
+## 2026-10-05 CI 前端干净构建修复
+
+- GitHub Actions 的 L1 前端 Job 在干净 checkout 中失败：源码导入 `@/config/env`，但 `frontend/src/config/env.ts` 被 `.gitignore` 排除，仅在本地存在。
+- 将 `env.ts` 改为受版本控制的 Vite 配置，读取 `VITE_API_BASE_URL` 并保留 `http://localhost:8123/api` 本地默认值；同步更新 `.gitignore`、前端示例、README 与前端 README。
+- 修复后 CI 不再依赖本地未跟踪文件，生产构建使用 `.env.production` 的 `/api`，Docker Nginx 继续负责反向代理。
+
 ## 2026-10-05 H3：角色化 Context、ToolExecutor 与 TaskWorkspace
 
 - 新增 `AgentContext`、`ContextAssemblyRequest`、`ContextAssembler` 和 `BoundedContextAssembler`。不同 Agent 角色只能获得自身白名单内的 Context，缺少必填上下文时拒绝执行，超出预算的非必填项被排除，不实现自动摘要或压缩。

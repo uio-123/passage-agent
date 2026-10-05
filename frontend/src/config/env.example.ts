@@ -1,7 +1,12 @@
 /**
- * 环境变量配置示例
- * 复制此文件为 env.ts 并填写实际配置
+ * Environment configuration example.
+ *
+ * `src/config/env.ts` is tracked and reads Vite environment variables.
+ * Configure VITE_API_BASE_URL in .env.development or .env.production,
+ * then import API_BASE_URL from `@/config/env`.
  */
+const configuredApiBaseUrl = import.meta.env.VITE_API_BASE_URL
 
-// API 基础地址
-export const API_BASE_URL = 'http://localhost:8123/api'
+export const API_BASE_URL = configuredApiBaseUrl && configuredApiBaseUrl.trim()
+  ? configuredApiBaseUrl.trim()
+  : 'http://localhost:8123/api'

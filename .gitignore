@@ -54,7 +54,6 @@ Thumbs.db
 
 # Sensitive configuration
 src/main/resources/application-local.yml
-frontend/src/config/env.ts
 
 # Environment variables (keep .env.example)
 .env

@@ -228,11 +228,15 @@ P1 已提供 Supervisor 受限路由、持久化 checkpoint、取消优先恢复
 
 ```bash
 cd frontend
-npm install
+npm ci
 npm run dev
 ```
 
 前端页面：http://localhost:5173
+
+前端 API 地址由 `frontend/.env.development`、`frontend/.env.production` 中的
+`VITE_API_BASE_URL` 控制；`frontend/src/config/env.ts` 已纳入版本控制，不存在
+本地复制配置的额外步骤。
 
 ## 🐳 Docker 一键部署（推荐）
 

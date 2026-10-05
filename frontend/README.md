@@ -20,7 +20,7 @@
 
 ```bash
 # 安装依赖
-npm install
+npm ci
 
 # 启动开发服务器
 npm run dev
@@ -34,6 +34,10 @@ npm run format
 # 代码检查
 npm run lint
 ```
+
+`src/config/env.ts` 是受版本控制的公共配置，通过
+`VITE_API_BASE_URL` 选择 API 地址。`.env.development` 默认使用后端地址，
+`.env.production` 使用 `/api`，由 Nginx 反向代理到后端。
 
 ## 生成 API 代码
 
