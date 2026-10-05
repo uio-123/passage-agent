@@ -1,7 +1,7 @@
 # AI Passage 多 Agent 协同创作平台改造计划
 
-> 文档状态：Draft 1.9
-> 更新日期：2026-08-28
+> 文档状态：Draft 2.0
+> 更新日期：2026-10-05
 > 项目目标：参考 DeerFlow 的 Agent Harness 思想，将当前项目从“多个 LLM 节点组成的固定流水线”升级为面向图文内容生产的混合式 Agent Workflow：以可恢复、可审计的 Workflow 负责控制，以受约束的 Agent 负责研究、创作与评审，使其具备任务规划、层级协作、Skills、受控工具、质量闭环、断点恢复、上下文治理、可验证交付和全链路观测能力，并形成可演示、可量化、适合写入简历的工程项目。
 
 ## 0. 已确认的技术决策
@@ -25,6 +25,21 @@
 | 检索、网页读取、图片下载/生成、上传、Markdown 合成、状态写入 | Tool / 领域服务 | Pexels、COS、Mermaid、数据库 | 不伪装为 Agent；统一经过 Policy 与幂等边界 |
 
 因此，P1 已完成的 Run、checkpoint、恢复与副作用幂等是混合架构的 Workflow 底座，保持不动。P2/P3 只在这个底座内增加受限的 Agent 能力，不另建一套并行编排或允许 Supervisor 绕过状态、策略和审批边界。
+
+### 0.2 统一状态口径（H0 基线）
+
+各阶段历史复选框继续作为实施记录，但当前状态统一以 [Agent Harness 化改造执行计划](harness_execution_plan.md) 的状态矩阵为准：
+
+| 阶段 | 当前状态 | 关键边界 |
+|---|---|---|
+| P0-A / P0-U / P0-B / P1.5 | `DONE` | 运行、框架、身份和测试基线已收口 |
+| P1 | `STAGING` | Run/checkpoint/恢复/幂等已实现；完整 Supervisor/HITL 闭环仍有缺口 |
+| P2 | `IN_PROGRESS` | Policy、Web Reader、来源和 Skill Registry 已实现；真实 Search Tool 与 Skill Resolver 未完成 |
+| P3 | `STAGING` | 质量闭环已接入主流程但默认关闭 |
+| P4 | `STAGING` | 事件、运行详情和观测 UI 已实现但默认关闭，部分交付仍缺失 |
+| P5 | `DRAFT` | 工程工具已完成，正式数据和评测证据未解锁 |
+
+后续方向按 Harness H0–H5 执行，不再用“增加 Agent 数量”作为主要进度指标。
 
 ## 1. 当前项目判断
 
@@ -437,6 +452,8 @@ P0-B 的执行顺序、验收、回滚与阶段门禁见 `p0-b_execution_plan.md
 
 ### P2：Skills、受控工具与可追溯内容（优先级：高）
 
+> 当前状态：`IN_PROGRESS`，缺少真实 Search Tool 与 Skill Resolver。
+
 目标：在既有 Workflow 控制底座内，用版本化 Skill 封装创作 SOP，让 Agent 按需使用受控工具并产出可追溯资料。
 
 P2 的具体顺序、不可变边界、安全门禁、验收与回滚见 [p2_execution_plan.md](p2_execution_plan.md)；先实施框架无关的研究/Tool 契约与 Policy Gateway，再接入真实网页读取和 Research Agent。
@@ -461,6 +478,8 @@ P2 的边界：Workflow 负责 Skill 选择后的状态推进、Tool Policy、�
 
 ### P3：并行写作与多 Agent 评审闭环（优先级：最高）
 
+> 当前状态：`STAGING`，质量闭环已接入主流程但默认关闭。
+
 目标：在 Workflow 的 fan-out/fan-in、质量门禁和循环上限内，形成项目最核心、最直观的多 Agent 协作亮点。
 
 P3 的边界：Workflow 负责章节任务拆分后的依赖、并发上限、稳定归并、质量门禁、最多两轮返工及版本持久化；Writer、Fact Checker、Style Reviewer、Revision Agent 仅生成结构化产物或修改建议。是否重试、返工范围和何时结束由代码校验 Agent 输出后决定。
@@ -479,6 +498,8 @@ P3 的边界：Workflow 负责章节任务拆分后的依赖、并发上限、�
 
 ### P4：实时可观测 UI 与运行治理（优先级：高）
 
+> 当前状态：`STAGING`，核心观测能力已实现但默认关闭，交付物下载和上下文治理仍不完整。
+
 目标：让多 Agent 协作过程“看得见”，增强演示表现和排障能力。
 
 - [ ] P4 E1（部分实现）：已建立默认关闭的 append-only Agent Event、单 run 序号、`Last-Event-ID` 补发和安全 Run 快照；尚未接入 Flow Agent Hooks 或 `streamMessages`，且真实事件序号/重连持久化测试在 C3。
@@ -492,17 +513,21 @@ P3 的边界：Workflow 负责章节任务拆分后的依赖、并发上限、�
 
 ### P5：评测、工程化与简历交付（优先级：中高）
 
+> 当前状态：`DRAFT`，发布证据未解锁。
+
 目标：用数据而不是口号证明改造成果。
 
-- [ ] 建立 20–50 条覆盖科技、教育、情感等场景的离线评测集。
-- [ ] 固定评测协议：定义事实支持率、引用有效率、质量分、成本和延迟的计算公式、样本量、人工抽检比例和最低通过门槛；LLM Judge 仅作为辅助评分。
-- [ ] 对比原始流水线、无评审版本、完整多 Agent 版本，并同时报告质量收益与 Token / 延迟代价。
+**状态（2026-08-31）：工程实现完成，发布证据待人工解锁。** 已建立 [P5 可执行文档](p5_execution_plan.md)，冻结 30 条 `p5-v1` 数据集的分层、指标公式与硬门槛。经用户确认，E1 人工复核不阻塞 E2–E5 工程实现，因此评分器、CI 分层、压测器和隔离 Docker Demo 均已落地并完成本地验证；E1 仍是 30 条纯合成 DRAFT，所有现有报告均为 `DRAFT/NON_RELEASE`。尚无正式评测或已接受性能基线，README 与简历不得填写收益、吞吐或延迟数字。
+
+- [x] 建立 30 条覆盖科技、教育、情感场景的合成离线评测草案；正式数据集仍待双审、裁决和人工审查 diff。
+- [x] 固定评测协议：定义事实支持率、引用有效率、质量分、成本和延迟的计算公式、样本量、人工抽检比例和最低通过门槛；LLM Judge 仅作为辅助评分。
+- [x] 实现原始流水线、无评审版本、完整多 Agent 版本的评分与对比报告；真实三变体运行仍待正式数据解锁。
 - [ ] 增加上下文策略对比：完整历史、按需选择、摘要压缩三种方案的质量/Token/成本结果。
-- [ ] 增加 Skill 版本回归测试，确保 Prompt、工具权限或量表升级不会静默降低质量。
-- [ ] 将前序阶段已有的单元、图集成、Testcontainers 与关键 API E2E 测试收口为 CI 分层门禁；默认 CI 不依赖真实 LLM Key 或不稳定公网服务。
-- [ ] 增加并发任务压测，记录 P50/P95、吞吐、Token、成本、恢复成功率。
-- [ ] 完善 Docker Compose 健康检查、配置示例和一键演示数据。
-- [ ] 更新 README：真实架构图、运行步骤、Demo GIF/截图、指标和限制。
+- [x] 增加 Skill 版本回归测试，确保 FSR/CVR/QS 回退与严重缺陷不会静默通过；缺失指标保持不完整。
+- [x] 将评测契约、后端、前端、Testcontainers 与 Compose Demo 收口为 L0–L3 CI 分层门禁；默认 CI 不依赖真实 LLM Key 或不稳定公网服务。
+- [x] 增加确定性并发压测器，记录 P50/P95、吞吐、恢复成功率和副作用；完整矩阵与基线接受仍为人工 L5，Token/成本只在真实 usage 可得时报告。
+- [x] 完善隔离 Docker Compose Demo、显式非生产确认、配置示例和幂等冒烟数据。
+- [ ] 更新 README：已完成 CI、Demo、协议入口与限制；正式指标、真实架构图和 Demo 素材待发布证据解锁。
 - [ ] 输出面试讲解材料：业务问题、方案取舍、关键难点、故障案例、量化结果。
 
 验收：新开发者可按 README 独立启动；CI 可稳定验证核心流程；简历中的每个数字均能从评测或监控结果复现。
@@ -634,11 +659,11 @@ GET    /api/skills                        查询可用内置 Skills 及版本
 
 ## 11. 下一步执行顺序
 
-1. 执行 P0-B：先设计并落地统一运行起点、强类型状态、`AgentRun` 状态机和事件/指标采集，再迁移现有主链路。
-2. 执行 P1：将现有 Scheduler Fixture 接入真实 Supervisor，完成条件路由、HITL、checkpoint、持久化和幂等恢复测试。
-3. 执行 P2：交付 Research、来源模型、Skill Registry 和 Policy Gateway；先让事实核查有可追溯证据。
-4. 执行 P3：完成章节 fan-out/fan-in、Reviewer、局部返工和 Artifact Manifest，并产出串行/并行的性能与成本对比。
-5. 执行 P4/P5：将已采集的运行数据用于 UI、评测、压测和 CI 收口，形成可复查的演示与简历数据。
+1. 执行 H0：提交 P5 当前工程并建立 `baseline-before-harness`，不改变默认行为。
+2. 执行 H1：新增 `AgentHarness` 与 `StateManager` 统一门面，委托现有 Runner、Run、Checkpoint 和 Recovery 服务。
+3. 执行 H2：扩展现有 Supervisor Plan，接入 Reviewer Feedback、Replan 与 HITL 状态更新。
+4. 执行 H3：实现 Agent 级 Context、Tool Runtime 和受控 TaskWorkspace。
+5. 执行 H4：用 5 个真实任务比较旧 Workflow 与 Harness Workflow，再按证据决定 Memory、正式 P5 和默认开关。
 
 ## 12. 设计参考与使用边界
 

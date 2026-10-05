@@ -1,6 +1,6 @@
 # P3：并行写作与多 Agent 评审闭环执行计划
 
-> 状态：进行中；E1–E4 已完成，E5 持久化收口进行中
+> 状态：`STAGING`；E1–E6 实现与持久化验证已完成，主流程默认关闭并等待真实任务验收。
 > 日期：2026-08-29
 > 依据：[plan.md](plan.md)、[p2_execution_plan.md](p2_execution_plan.md)、[p2-e5_execution_plan.md](p2-e5_execution_plan.md) 与当前代码。
 

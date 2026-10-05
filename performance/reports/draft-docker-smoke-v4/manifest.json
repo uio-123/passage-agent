@@ -1,0 +1,30 @@
+{
+  "runId": "draft-load-2026-08-31T10-50-31-845Z",
+  "reportStatus": "DRAFT",
+  "publicationStatus": "NON_RELEASE",
+  "releaseEligible": false,
+  "releaseBlockers": [
+    "performance baseline not accepted",
+    "formal evaluation remains locked by human adjudication"
+  ],
+  "scenarioVersion": "docker-demo-smoke-v1",
+  "scenarioSha256": "d239df3bd0e60184e0b4fabe14617150ac777f52eda7eb09566297b1411d5ca4",
+  "baseUrl": "http://localhost:18123",
+  "generatedAt": "2026-08-31T10:50:39.976Z",
+  "environment": {
+    "platform": "win32",
+    "osRelease": "10.0.26100",
+    "cpuModel": "12th Gen Intel(R) Core(TM) i7-12700H",
+    "cpuCount": 20,
+    "totalMemoryBytes": 16890978304,
+    "freeMemoryBytesAtStart": 2330775552,
+    "nodeVersion": "v24.16.0",
+    "gitSha": "60f73ba4cb4aa0edfe22d27d07ce15f33ff1d437",
+    "gitDirty": true,
+    "hostJavaVersion": "openjdk version \"17.0.17\" 2025-10-21",
+    "backendJavaVersion": "openjdk version \"21.0.12\" 2026-07-21 LTS",
+    "dockerServerVersion": "29.3.0",
+    "backendImageId": "sha256:48eead09e2c5ed0c57a930a90150a1222c80867a1523970cd2982094c9c5ae8d"
+  },
+  "disclaimer": "Deterministic demo-path capacity observation; not real-model throughput and not approved for README or resume claims."
+}

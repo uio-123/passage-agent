@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://passage-agent.invalid/schemas/p5-sample.schema.json",
+  "title": "Passage Agent P5 evaluation dataset",
+  "type": "object",
+  "required": ["datasetVersion", "rubrics", "samples"],
+  "properties": {
+    "datasetVersion": { "const": "p5-v1" },
+    "rubrics": {
+      "type": "object",
+      "required": ["p5-style-v1", "p5-readability-v1"],
+      "additionalProperties": {
+        "type": "array",
+        "minItems": 5,
+        "maxItems": 5,
+        "items": { "type": "string", "minLength": 1 }
+      }
+    },
+    "samples": {
+      "type": "array",
+      "minItems": 30,
+      "maxItems": 30,
+      "items": { "$ref": "#/$defs/sample" }
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "sample": {
+      "type": "object",
+      "required": [
+        "id", "datasetVersion", "domain", "language", "title", "userGoal", "style",
+        "requiresResearch", "requiresImages", "expectedRoute", "expectedQualityOutcome",
+        "faultScenario", "outlineRequirements", "referenceFacts", "replaySources",
+        "requiredCitationFactIds", "styleRubric", "readabilityRubric", "forbiddenClaims",
+        "expectedArtifacts", "fakeResponses", "annotationStatus", "annotatorIds"
+      ],
+      "properties": {
+        "id": { "type": "string", "pattern": "^p5-(technology|education|emotion)-[0-9]{2}$" },
+        "datasetVersion": { "const": "p5-v1" },
+        "domain": { "enum": ["TECHNOLOGY", "EDUCATION", "EMOTION"] },
+        "language": { "const": "zh-CN" },
+        "title": { "type": "string", "minLength": 4 },
+        "userGoal": { "type": "string", "minLength": 12 },
+        "style": { "enum": ["PROFESSIONAL", "EDUCATIONAL", "WARM"] },
+        "requiresResearch": { "type": "boolean" },
+        "requiresImages": { "type": "boolean" },
+        "expectedRoute": { "enum": ["RESEARCH", "NO_RESEARCH"] },
+        "expectedQualityOutcome": { "enum": ["ACCEPT_FIRST_ROUND", "LOCAL_REVISION"] },
+        "faultScenario": { "enum": ["NONE", "MODEL_TIMEOUT", "SECTION_FAILURE", "CHECKPOINT_RESUME", "DUPLICATE_CONTINUE"] },
+        "outlineRequirements": {
+          "type": "object",
+          "required": ["requiredSections", "forbiddenSections", "minSections", "maxSections"],
+          "properties": {
+            "requiredSections": { "type": "array", "minItems": 3, "items": { "type": "string" } },
+            "forbiddenSections": { "type": "array", "items": { "type": "string" } },
+            "minSections": { "type": "integer", "minimum": 3 },
+            "maxSections": { "type": "integer", "maximum": 8 }
+          },
+          "additionalProperties": false
+        },
+        "referenceFacts": { "type": "array", "items": { "$ref": "#/$defs/fact" } },
+        "replaySources": { "type": "array", "items": { "$ref": "#/$defs/source" } },
+        "requiredCitationFactIds": { "type": "array", "items": { "type": "string" } },
+        "styleRubric": { "const": "p5-style-v1" },
+        "readabilityRubric": { "const": "p5-readability-v1" },
+        "forbiddenClaims": { "type": "array", "items": { "type": "string" } },
+        "expectedArtifacts": { "type": "array", "minItems": 2, "items": { "type": "string" } },
+        "fakeResponses": {
+          "type": "object",
+          "required": ["fixtureId", "expectedCitations"],
+          "properties": {
+            "fixtureId": { "type": "string", "minLength": 1 },
+            "expectedCitations": { "type": "array", "items": { "type": "string" } }
+          },
+          "additionalProperties": false
+        },
+        "annotationStatus": { "enum": ["DRAFT", "DOUBLE_REVIEWED", "ADJUDICATED"] },
+        "annotatorIds": { "type": "array", "uniqueItems": true, "items": { "type": "string" } }
+      },
+      "additionalProperties": false
+    },
+    "fact": {
+      "type": "object",
+      "required": ["id", "statement", "allowedSourceIds", "weight"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "statement": { "type": "string", "minLength": 4 },
+        "allowedSourceIds": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string" } },
+        "weight": { "enum": [1, 2] }
+      },
+      "additionalProperties": false
+    },
+    "source": {
+      "type": "object",
+      "required": ["id", "url", "title", "excerpt", "capturedAt", "contentSha256", "sourceType"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "url": { "type": "string", "pattern": "^https://[a-z0-9-]+\\.invalid/" },
+        "title": { "type": "string", "minLength": 3 },
+        "excerpt": { "type": "string", "minLength": 12, "maxLength": 500 },
+        "capturedAt": { "type": "string", "format": "date-time" },
+        "contentSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "sourceType": { "const": "SYNTHETIC_REPLAY" }
+      },
+      "additionalProperties": false
+    }
+  }
+}

@@ -1,6 +1,6 @@
 # P0-B 可执行开发计划
 
-> 状态：已校验，执行中（仅覆盖 P0-B）
+> 状态：`DONE`（计划覆盖范围已完成并通过验证）
 > 更新日期：2026-08-27
 > 依据：[plan.md](plan.md)、[development_log.md](development_log.md)、[README.md](../README.md) 与当前代码。
 

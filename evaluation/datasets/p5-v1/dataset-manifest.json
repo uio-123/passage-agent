@@ -1,0 +1,12 @@
+{
+  "datasetVersion": "p5-v1",
+  "protocolVersion": "p5-protocol-v1",
+  "sampleCount": 30,
+  "sampleFile": "samples.json",
+  "sampleFileSha256": "0ddee6dc110de3b5e5dc4fe4c1c663d1f16e2b50a3eaf6051d43156c24dfebf4",
+  "createdAt": "2026-08-31T00:00:00+08:00",
+  "license": "Synthetic evaluation fixtures created for this repository; no real user or copyrighted source text.",
+  "releaseReady": false,
+  "blockingReasons": ["30 samples require two-person review and adjudication"],
+  "changes": ["Initial 30-sample synthetic draft covering technology, education and emotion domains"]
+}

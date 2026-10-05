@@ -1,6 +1,6 @@
 # P1：Supervisor、条件路由与可恢复执行计划
 
-> 状态：已完成（E1–E5 已完成；仅覆盖 P1）
+> 状态：`DONE`（E1–E5 计划范围已完成）；P1 阶段整体因 Supervisor/HITL 扩展项仍标记为 `STAGING`
 > 日期：2026-08-28
 > 依据：[plan.md](plan.md)、[development_log.md](development_log.md)、[p0-b_execution_plan.md](p0-b_execution_plan.md)、当前代码与默认测试。
 

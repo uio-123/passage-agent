@@ -1,0 +1,351 @@
+{
+  "datasetVersion": "p5-v1",
+  "rubrics": {
+    "p5-style-v1": ["语气符合指定风格", "术语使用一致", "叙述视角一致", "避免夸张营销", "结尾与正文风格一致"],
+    "p5-readability-v1": ["段落主题清晰", "句子长度适中", "过渡自然", "概念首次出现有解释", "没有无意义重复"]
+  },
+  "samples": [
+    {
+      "id": "p5-technology-01", "datasetVersion": "p5-v1", "domain": "TECHNOLOGY", "language": "zh-CN", "title": "边缘推理试点复盘", "userGoal": "根据离线研究包撰写面向技术管理者的边缘推理试点复盘。", "style": "PROFESSIONAL",
+      "requiresResearch": true, "requiresImages": true, "expectedRoute": "RESEARCH", "expectedQualityOutcome": "LOCAL_REVISION", "faultScenario": "NONE",
+      "outlineRequirements": {"requiredSections": ["背景", "试点结果", "风险与建议"], "forbiddenSections": ["未经来源支持的行业排名"], "minSections": 3, "maxSections": 5},
+      "referenceFacts": [
+        {"id": "t01-f1", "statement": "试点覆盖四个边缘节点", "allowedSourceIds": ["t01-s1"], "weight": 1},
+        {"id": "t01-f2", "statement": "中位响应时间从180毫秒降至72毫秒", "allowedSourceIds": ["t01-s1", "t01-s2"], "weight": 2},
+        {"id": "t01-f3", "statement": "离线队列峰值为每节点240条", "allowedSourceIds": ["t01-s2"], "weight": 1}
+      ],
+      "replaySources": [
+        {"id": "t01-s1", "url": "https://edge-lab.invalid/t01/report", "title": "边缘试点记录A", "excerpt": "合成记录：四个边缘节点上线后，中位响应时间由180毫秒降到72毫秒。", "capturedAt": "2026-08-01T00:00:00Z", "contentSha256": "0101010101010101010101010101010101010101010101010101010101010101", "sourceType": "SYNTHETIC_REPLAY"},
+        {"id": "t01-s2", "url": "https://ops-lab.invalid/t01/queue", "title": "边缘队列记录B", "excerpt": "合成记录：复核得到72毫秒中位响应时间，离线队列峰值为每节点240条。", "capturedAt": "2026-08-01T00:00:00Z", "contentSha256": "0202020202020202020202020202020202020202020202020202020202020202", "sourceType": "SYNTHETIC_REPLAY"}
+      ],
+      "requiredCitationFactIds": ["t01-f1", "t01-f2", "t01-f3"], "styleRubric": "p5-style-v1", "readabilityRubric": "p5-readability-v1", "forbiddenClaims": ["试点已证明适用于所有业务"], "expectedArtifacts": ["ARTICLE_MARKDOWN", "QUALITY_REPORT", "IMAGE_PLAN"], "fakeResponses": {"fixtureId": "p5-t01", "expectedCitations": ["t01-s1", "t01-s2"]}, "annotationStatus": "DRAFT", "annotatorIds": []
+    },
+    {
+      "id": "p5-technology-02", "datasetVersion": "p5-v1", "domain": "TECHNOLOGY", "language": "zh-CN", "title": "校园平板离线同步设计", "userGoal": "基于给定合成材料解释校园平板离线同步的设计取舍。", "style": "PROFESSIONAL",
+      "requiresResearch": true, "requiresImages": true, "expectedRoute": "RESEARCH", "expectedQualityOutcome": "LOCAL_REVISION", "faultScenario": "NONE",
+      "outlineRequirements": {"requiredSections": ["约束", "同步方案", "冲突处理"], "forbiddenSections": ["真实厂商推荐"], "minSections": 3, "maxSections": 5},
+      "referenceFacts": [
+        {"id": "t02-f1", "statement": "试验包含120台平板", "allowedSourceIds": ["t02-s1"], "weight": 1},
+        {"id": "t02-f2", "statement": "断网最长持续六小时", "allowedSourceIds": ["t02-s1", "t02-s2"], "weight": 2},
+        {"id": "t02-f3", "statement": "冲突记录中百分之八十三可自动合并", "allowedSourceIds": ["t02-s2"], "weight": 2}
+      ],
+      "replaySources": [
+        {"id": "t02-s1", "url": "https://school-lab.invalid/t02/devices", "title": "设备试验记录", "excerpt": "合成记录：120台平板参与试验，模拟断网窗口最长为六小时。", "capturedAt": "2026-08-02T00:00:00Z", "contentSha256": "0303030303030303030303030303030303030303030303030303030303030303", "sourceType": "SYNTHETIC_REPLAY"},
+        {"id": "t02-s2", "url": "https://sync-lab.invalid/t02/conflicts", "title": "同步冲突记录", "excerpt": "合成记录：六小时断网场景产生的冲突中，百分之八十三可按规则自动合并。", "capturedAt": "2026-08-02T00:00:00Z", "contentSha256": "0404040404040404040404040404040404040404040404040404040404040404", "sourceType": "SYNTHETIC_REPLAY"}
+      ],
+      "requiredCitationFactIds": ["t02-f1", "t02-f2", "t02-f3"], "styleRubric": "p5-style-v1", "readabilityRubric": "p5-readability-v1", "forbiddenClaims": ["冲突可以百分之百自动解决"], "expectedArtifacts": ["ARTICLE_MARKDOWN", "QUALITY_REPORT", "IMAGE_PLAN"], "fakeResponses": {"fixtureId": "p5-t02", "expectedCitations": ["t02-s1", "t02-s2"]}, "annotationStatus": "DRAFT", "annotatorIds": []
+    },
+    {
+      "id": "p5-technology-03", "datasetVersion": "p5-v1", "domain": "TECHNOLOGY", "language": "zh-CN", "title": "客服助手灰度发布", "userGoal": "写一篇强调边界和回滚机制的客服助手灰度发布案例。", "style": "PROFESSIONAL",
+      "requiresResearch": true, "requiresImages": true, "expectedRoute": "RESEARCH", "expectedQualityOutcome": "LOCAL_REVISION", "faultScenario": "NONE",
+      "outlineRequirements": {"requiredSections": ["灰度范围", "观测结果", "回滚边界"], "forbiddenSections": ["商业背书"], "minSections": 3, "maxSections": 5},
+      "referenceFacts": [
+        {"id": "t03-f1", "statement": "首批仅覆盖百分之十的会话", "allowedSourceIds": ["t03-s1"], "weight": 2},
+        {"id": "t03-f2", "statement": "人工接管率为百分之十四", "allowedSourceIds": ["t03-s1", "t03-s2"], "weight": 2},
+        {"id": "t03-f3", "statement": "两次自动回滚均在三分钟内完成", "allowedSourceIds": ["t03-s2"], "weight": 1}
+      ],
+      "replaySources": [
+        {"id": "t03-s1", "url": "https://support-lab.invalid/t03/canary", "title": "灰度会话记录", "excerpt": "合成记录：首批开放百分之十会话，期间人工接管率为百分之十四。", "capturedAt": "2026-08-03T00:00:00Z", "contentSha256": "0505050505050505050505050505050505050505050505050505050505050505", "sourceType": "SYNTHETIC_REPLAY"},
+        {"id": "t03-s2", "url": "https://reliability-lab.invalid/t03/rollback", "title": "回滚演练记录", "excerpt": "合成记录：复核人工接管率为百分之十四，两次自动回滚都在三分钟内完成。", "capturedAt": "2026-08-03T00:00:00Z", "contentSha256": "0606060606060606060606060606060606060606060606060606060606060606", "sourceType": "SYNTHETIC_REPLAY"}
+      ],
+      "requiredCitationFactIds": ["t03-f1", "t03-f2", "t03-f3"], "styleRubric": "p5-style-v1", "readabilityRubric": "p5-readability-v1", "forbiddenClaims": ["助手可以完全替代人工客服"], "expectedArtifacts": ["ARTICLE_MARKDOWN", "QUALITY_REPORT", "IMAGE_PLAN"], "fakeResponses": {"fixtureId": "p5-t03", "expectedCitations": ["t03-s1", "t03-s2"]}, "annotationStatus": "DRAFT", "annotatorIds": []
+    },
+    {
+      "id": "p5-technology-04", "datasetVersion": "p5-v1", "domain": "TECHNOLOGY", "language": "zh-CN", "title": "工厂传感器异常检测", "userGoal": "根据离线数据说明工厂传感器异常检测的收益与误报成本。", "style": "PROFESSIONAL",
+      "requiresResearch": true, "requiresImages": true, "expectedRoute": "RESEARCH", "expectedQualityOutcome": "LOCAL_REVISION", "faultScenario": "NONE",
+      "outlineRequirements": {"requiredSections": ["数据范围", "检测结果", "运维影响"], "forbiddenSections": ["安全认证结论"], "minSections": 3, "maxSections": 5},
+      "referenceFacts": [
+        {"id": "t04-f1", "statement": "数据来自三条产线的九十个传感器", "allowedSourceIds": ["t04-s1"], "weight": 1},
+        {"id": "t04-f2", "statement": "合成测试召回率为百分之九十二", "allowedSourceIds": ["t04-s1", "t04-s2"], "weight": 2},
+        {"id": "t04-f3", "statement": "每周平均产生七个误报", "allowedSourceIds": ["t04-s2"], "weight": 2}
+      ],
+      "replaySources": [
+        {"id": "t04-s1", "url": "https://factory-lab.invalid/t04/sensors", "title": "传感器数据范围", "excerpt": "合成记录：三条产线共九十个传感器进入测试，异常检测召回率为百分之九十二。", "capturedAt": "2026-08-04T00:00:00Z", "contentSha256": "0707070707070707070707070707070707070707070707070707070707070707", "sourceType": "SYNTHETIC_REPLAY"},
+        {"id": "t04-s2", "url": "https://maintenance-lab.invalid/t04/alerts", "title": "告警复核记录", "excerpt": "合成记录：复核召回率为百分之九十二，系统每周平均产生七个误报。", "capturedAt": "2026-08-04T00:00:00Z", "contentSha256": "0808080808080808080808080808080808080808080808080808080808080808", "sourceType": "SYNTHETIC_REPLAY"}
+      ],
+      "requiredCitationFactIds": ["t04-f1", "t04-f2", "t04-f3"], "styleRubric": "p5-style-v1", "readabilityRubric": "p5-readability-v1", "forbiddenClaims": ["系统从不漏报"], "expectedArtifacts": ["ARTICLE_MARKDOWN", "QUALITY_REPORT", "IMAGE_PLAN"], "fakeResponses": {"fixtureId": "p5-t04", "expectedCitations": ["t04-s1", "t04-s2"]}, "annotationStatus": "DRAFT", "annotatorIds": []
+    },
+    {
+      "id": "p5-technology-05", "datasetVersion": "p5-v1", "domain": "TECHNOLOGY", "language": "zh-CN", "title": "移动端电量优化实验", "userGoal": "结合合成实验记录说明移动端电量优化的测量方法和限制。", "style": "PROFESSIONAL",
+      "requiresResearch": true, "requiresImages": true, "expectedRoute": "RESEARCH", "expectedQualityOutcome": "ACCEPT_FIRST_ROUND", "faultScenario": "MODEL_TIMEOUT",
+      "outlineRequirements": {"requiredSections": ["实验设计", "测量结果", "适用限制"], "forbiddenSections": ["机型排行榜"], "minSections": 3, "maxSections": 5},
+      "referenceFacts": [
+        {"id": "t05-f1", "statement": "实验包含八种合成使用轨迹", "allowedSourceIds": ["t05-s1"], "weight": 1},
+        {"id": "t05-f2", "statement": "中位耗电量下降百分之十一", "allowedSourceIds": ["t05-s1", "t05-s2"], "weight": 2},
+        {"id": "t05-f3", "statement": "后台同步延迟增加四秒", "allowedSourceIds": ["t05-s2"], "weight": 2}
+      ],
+      "replaySources": [
+        {"id": "t05-s1", "url": "https://mobile-lab.invalid/t05/battery", "title": "电量实验记录", "excerpt": "合成记录：八种使用轨迹的中位耗电量下降百分之十一。", "capturedAt": "2026-08-05T00:00:00Z", "contentSha256": "0909090909090909090909090909090909090909090909090909090909090909", "sourceType": "SYNTHETIC_REPLAY"},
+        {"id": "t05-s2", "url": "https://sync-lab.invalid/t05/latency", "title": "后台同步记录", "excerpt": "合成记录：复核耗电量下降百分之十一，但后台同步延迟增加四秒。", "capturedAt": "2026-08-05T00:00:00Z", "contentSha256": "1010101010101010101010101010101010101010101010101010101010101010", "sourceType": "SYNTHETIC_REPLAY"}
+      ],
+      "requiredCitationFactIds": ["t05-f1", "t05-f2", "t05-f3"], "styleRubric": "p5-style-v1", "readabilityRubric": "p5-readability-v1", "forbiddenClaims": ["所有手机均可节电百分之十一"], "expectedArtifacts": ["ARTICLE_MARKDOWN", "QUALITY_REPORT", "IMAGE_PLAN"], "fakeResponses": {"fixtureId": "p5-t05", "expectedCitations": ["t05-s1", "t05-s2"]}, "annotationStatus": "DRAFT", "annotatorIds": []
+    },
+    {
+      "id": "p5-technology-06", "datasetVersion": "p5-v1", "domain": "TECHNOLOGY", "language": "zh-CN", "title": "可观测事件管道升级", "userGoal": "用合成运行记录复盘可观测事件管道升级与恢复过程。", "style": "PROFESSIONAL",
+      "requiresResearch": true, "requiresImages": true, "expectedRoute": "RESEARCH", "expectedQualityOutcome": "ACCEPT_FIRST_ROUND", "faultScenario": "CHECKPOINT_RESUME",
+      "outlineRequirements": {"requiredSections": ["升级目标", "事件结果", "恢复验证"], "forbiddenSections": ["未测量成本"], "minSections": 3, "maxSections": 5},
+      "referenceFacts": [
+        {"id": "t06-f1", "statement": "回放集包含一万二千条事件", "allowedSourceIds": ["t06-s1"], "weight": 1},
+        {"id": "t06-f2", "statement": "单运行序号缺口为零", "allowedSourceIds": ["t06-s1", "t06-s2"], "weight": 2},
+        {"id": "t06-f3", "statement": "恢复演练重复事件数为零", "allowedSourceIds": ["t06-s2"], "weight": 2}
+      ],
+      "replaySources": [
+        {"id": "t06-s1", "url": "https://observe-lab.invalid/t06/replay", "title": "事件回放记录", "excerpt": "合成记录：一万二千条事件完成回放，单运行序号缺口为零。", "capturedAt": "2026-08-06T00:00:00Z", "contentSha256": "1111111111111111111111111111111111111111111111111111111111111111", "sourceType": "SYNTHETIC_REPLAY"},
+        {"id": "t06-s2", "url": "https://recovery-lab.invalid/t06/events", "title": "事件恢复演练", "excerpt": "合成记录：序号缺口保持为零，checkpoint恢复后的重复事件数为零。", "capturedAt": "2026-08-06T00:00:00Z", "contentSha256": "1212121212121212121212121212121212121212121212121212121212121212", "sourceType": "SYNTHETIC_REPLAY"}
+      ],
+      "requiredCitationFactIds": ["t06-f1", "t06-f2", "t06-f3"], "styleRubric": "p5-style-v1", "readabilityRubric": "p5-readability-v1", "forbiddenClaims": ["已经测得模型调用成本"], "expectedArtifacts": ["ARTICLE_MARKDOWN", "QUALITY_REPORT", "IMAGE_PLAN"], "fakeResponses": {"fixtureId": "p5-t06", "expectedCitations": ["t06-s1", "t06-s2"]}, "annotationStatus": "DRAFT", "annotatorIds": []
+    },
+    {
+      "id": "p5-technology-07", "datasetVersion": "p5-v1", "domain": "TECHNOLOGY", "language": "zh-CN", "title": "为初学者解释缓存", "userGoal": "不用外部事实，以生活类比向初学者解释缓存、命中与失效。", "style": "EDUCATIONAL",
+      "requiresResearch": false, "requiresImages": false, "expectedRoute": "NO_RESEARCH", "expectedQualityOutcome": "ACCEPT_FIRST_ROUND", "faultScenario": "NONE",
+      "outlineRequirements": {"requiredSections": ["缓存是什么", "命中与未命中", "失效为何重要"], "forbiddenSections": ["性能保证"], "minSections": 3, "maxSections": 5},
+      "referenceFacts": [], "replaySources": [], "requiredCitationFactIds": [], "styleRubric": "p5-style-v1", "readabilityRubric": "p5-readability-v1", "forbiddenClaims": ["缓存永远让系统更快"], "expectedArtifacts": ["ARTICLE_MARKDOWN", "QUALITY_REPORT"], "fakeResponses": {"fixtureId": "p5-t07", "expectedCitations": []}, "annotationStatus": "DRAFT", "annotatorIds": []
+    },
+    {
+      "id": "p5-technology-08", "datasetVersion": "p5-v1", "domain": "TECHNOLOGY", "language": "zh-CN", "title": "代码评审清单导读", "userGoal": "整理一篇不依赖外部来源的代码评审清单导读，强调取舍。", "style": "EDUCATIONAL",
+      "requiresResearch": false, "requiresImages": false, "expectedRoute": "NO_RESEARCH", "expectedQualityOutcome": "ACCEPT_FIRST_ROUND", "faultScenario": "NONE",
+      "outlineRequirements": {"requiredSections": ["正确性", "可维护性", "沟通方式"], "forbiddenSections": ["工具广告"], "minSections": 3, "maxSections": 5},
+      "referenceFacts": [], "replaySources": [], "requiredCitationFactIds": [], "styleRubric": "p5-style-v1", "readabilityRubric": "p5-readability-v1", "forbiddenClaims": ["清单可以发现所有缺陷"], "expectedArtifacts": ["ARTICLE_MARKDOWN", "QUALITY_REPORT"], "fakeResponses": {"fixtureId": "p5-t08", "expectedCitations": []}, "annotationStatus": "DRAFT", "annotatorIds": []
+    },
+    {
+      "id": "p5-technology-09", "datasetVersion": "p5-v1", "domain": "TECHNOLOGY", "language": "zh-CN", "title": "重试为何需要幂等", "userGoal": "通过虚构订单示例解释重试、幂等键和重复副作用。", "style": "EDUCATIONAL",
+      "requiresResearch": false, "requiresImages": false, "expectedRoute": "NO_RESEARCH", "expectedQualityOutcome": "ACCEPT_FIRST_ROUND", "faultScenario": "NONE",
+      "outlineRequirements": {"requiredSections": ["失败与重试", "重复副作用", "幂等设计"], "forbiddenSections": ["真实支付建议"], "minSections": 3, "maxSections": 5},
+      "referenceFacts": [], "replaySources": [], "requiredCitationFactIds": [], "styleRubric": "p5-style-v1", "readabilityRubric": "p5-readability-v1", "forbiddenClaims": ["幂等等于事务"], "expectedArtifacts": ["ARTICLE_MARKDOWN", "QUALITY_REPORT"], "fakeResponses": {"fixtureId": "p5-t09", "expectedCitations": []}, "annotationStatus": "DRAFT", "annotatorIds": []
+    },
+    {
+      "id": "p5-technology-10", "datasetVersion": "p5-v1", "domain": "TECHNOLOGY", "language": "zh-CN", "title": "一次温和的架构迁移", "userGoal": "写一个完全虚构的架构迁移故事，突出分阶段和回滚思维。", "style": "PROFESSIONAL",
+      "requiresResearch": false, "requiresImages": false, "expectedRoute": "NO_RESEARCH", "expectedQualityOutcome": "ACCEPT_FIRST_ROUND", "faultScenario": "NONE",
+      "outlineRequirements": {"requiredSections": ["迁移动机", "分阶段方案", "回滚与复盘"], "forbiddenSections": ["真实公司案例"], "minSections": 3, "maxSections": 5},
+      "referenceFacts": [], "replaySources": [], "requiredCitationFactIds": [], "styleRubric": "p5-style-v1", "readabilityRubric": "p5-readability-v1", "forbiddenClaims": ["该案例来自真实生产事故"], "expectedArtifacts": ["ARTICLE_MARKDOWN", "QUALITY_REPORT"], "fakeResponses": {"fixtureId": "p5-t10", "expectedCitations": []}, "annotationStatus": "DRAFT", "annotatorIds": []
+    },
+    {
+      "id": "p5-education-01", "datasetVersion": "p5-v1", "domain": "EDUCATION", "language": "zh-CN", "title": "间隔检索课堂试验", "userGoal": "根据合成课堂记录介绍间隔检索练习并说明局限。", "style": "EDUCATIONAL",
+      "requiresResearch": true, "requiresImages": true, "expectedRoute": "RESEARCH", "expectedQualityOutcome": "LOCAL_REVISION", "faultScenario": "NONE",
+      "outlineRequirements": {"requiredSections": ["课堂设计", "结果", "局限"], "forbiddenSections": ["普遍因果结论"], "minSections": 3, "maxSections": 5},
+      "referenceFacts": [
+        {"id": "e01-f1", "statement": "试验包含六个班级", "allowedSourceIds": ["e01-s1"], "weight": 1},
+        {"id": "e01-f2", "statement": "四周后测验中位分提高六分", "allowedSourceIds": ["e01-s1", "e01-s2"], "weight": 2},
+        {"id": "e01-f3", "statement": "有两个班级未完成全部练习", "allowedSourceIds": ["e01-s2"], "weight": 2}
+      ],
+      "replaySources": [
+        {"id": "e01-s1", "url": "https://classroom-lab.invalid/e01/design", "title": "间隔练习记录", "excerpt": "合成记录：六个班级参与四周试验，后测验中位分提高六分。", "capturedAt": "2026-08-11T00:00:00Z", "contentSha256": "1313131313131313131313131313131313131313131313131313131313131313", "sourceType": "SYNTHETIC_REPLAY"},
+        {"id": "e01-s2", "url": "https://assessment-lab.invalid/e01/followup", "title": "课堂跟进记录", "excerpt": "合成记录：中位分提高六分，但两个班级没有完成全部练习。", "capturedAt": "2026-08-11T00:00:00Z", "contentSha256": "1414141414141414141414141414141414141414141414141414141414141414", "sourceType": "SYNTHETIC_REPLAY"}
+      ],
+      "requiredCitationFactIds": ["e01-f1", "e01-f2", "e01-f3"], "styleRubric": "p5-style-v1", "readabilityRubric": "p5-readability-v1", "forbiddenClaims": ["间隔检索保证所有学生提分"], "expectedArtifacts": ["ARTICLE_MARKDOWN", "QUALITY_REPORT", "IMAGE_PLAN"], "fakeResponses": {"fixtureId": "p5-e01", "expectedCitations": ["e01-s1", "e01-s2"]}, "annotationStatus": "DRAFT", "annotatorIds": []
+    },
+    {
+      "id": "p5-education-02", "datasetVersion": "p5-v1", "domain": "EDUCATION", "language": "zh-CN", "title": "同伴反馈写作课", "userGoal": "基于合成资料复盘同伴反馈写作课的流程和边界。", "style": "EDUCATIONAL",
+      "requiresResearch": true, "requiresImages": true, "expectedRoute": "RESEARCH", "expectedQualityOutcome": "LOCAL_REVISION", "faultScenario": "NONE",
+      "outlineRequirements": {"requiredSections": ["反馈规则", "课堂结果", "教师角色"], "forbiddenSections": ["学生隐私"], "minSections": 3, "maxSections": 5},
+      "referenceFacts": [
+        {"id": "e02-f1", "statement": "共有八十四名学生参与", "allowedSourceIds": ["e02-s1"], "weight": 1},
+        {"id": "e02-f2", "statement": "每篇草稿收到两轮同伴反馈", "allowedSourceIds": ["e02-s1", "e02-s2"], "weight": 1},
+        {"id": "e02-f3", "statement": "教师抽查了百分之二十五的反馈", "allowedSourceIds": ["e02-s2"], "weight": 2}
+      ],
+      "replaySources": [
+        {"id": "e02-s1", "url": "https://writing-lab.invalid/e02/peer", "title": "同伴反馈课堂记录", "excerpt": "合成记录：八十四名学生参与，每篇草稿收到两轮同伴反馈。", "capturedAt": "2026-08-12T00:00:00Z", "contentSha256": "1515151515151515151515151515151515151515151515151515151515151515", "sourceType": "SYNTHETIC_REPLAY"},
+        {"id": "e02-s2", "url": "https://teacher-lab.invalid/e02/review", "title": "教师抽查记录", "excerpt": "合成记录：草稿采用两轮反馈，教师另外抽查百分之二十五的反馈。", "capturedAt": "2026-08-12T00:00:00Z", "contentSha256": "1616161616161616161616161616161616161616161616161616161616161616", "sourceType": "SYNTHETIC_REPLAY"}
+      ],
+      "requiredCitationFactIds": ["e02-f1", "e02-f2", "e02-f3"], "styleRubric": "p5-style-v1", "readabilityRubric": "p5-readability-v1", "forbiddenClaims": ["同伴反馈可取代教师"], "expectedArtifacts": ["ARTICLE_MARKDOWN", "QUALITY_REPORT", "IMAGE_PLAN"], "fakeResponses": {"fixtureId": "p5-e02", "expectedCitations": ["e02-s1", "e02-s2"]}, "annotationStatus": "DRAFT", "annotatorIds": []
+    },
+    {
+      "id": "p5-education-03", "datasetVersion": "p5-v1", "domain": "EDUCATION", "language": "zh-CN", "title": "虚拟实验室入门课", "userGoal": "根据合成教学包分析虚拟实验室如何辅助入门课程。", "style": "EDUCATIONAL",
+      "requiresResearch": true, "requiresImages": true, "expectedRoute": "RESEARCH", "expectedQualityOutcome": "LOCAL_REVISION", "faultScenario": "NONE",
+      "outlineRequirements": {"requiredSections": ["教学目标", "使用结果", "不可替代部分"], "forbiddenSections": ["产品推荐"], "minSections": 3, "maxSections": 5},
+      "referenceFacts": [
+        {"id": "e03-f1", "statement": "课程安排了五次虚拟实验", "allowedSourceIds": ["e03-s1"], "weight": 1},
+        {"id": "e03-f2", "statement": "预习完成率为百分之八十八", "allowedSourceIds": ["e03-s1", "e03-s2"], "weight": 2},
+        {"id": "e03-f3", "statement": "最终仍保留两次实体实验", "allowedSourceIds": ["e03-s2"], "weight": 2}
+      ],
+      "replaySources": [
+        {"id": "e03-s1", "url": "https://virtual-lab.invalid/e03/sessions", "title": "虚拟实验安排", "excerpt": "合成记录：课程安排五次虚拟实验，预习完成率为百分之八十八。", "capturedAt": "2026-08-13T00:00:00Z", "contentSha256": "1717171717171717171717171717171717171717171717171717171717171717", "sourceType": "SYNTHETIC_REPLAY"},
+        {"id": "e03-s2", "url": "https://course-lab.invalid/e03/outcomes", "title": "课程结果记录", "excerpt": "合成记录：预习完成率为百分之八十八，课程仍保留两次实体实验。", "capturedAt": "2026-08-13T00:00:00Z", "contentSha256": "1818181818181818181818181818181818181818181818181818181818181818", "sourceType": "SYNTHETIC_REPLAY"}
+      ],
+      "requiredCitationFactIds": ["e03-f1", "e03-f2", "e03-f3"], "styleRubric": "p5-style-v1", "readabilityRubric": "p5-readability-v1", "forbiddenClaims": ["虚拟实验完全取代实体实验"], "expectedArtifacts": ["ARTICLE_MARKDOWN", "QUALITY_REPORT", "IMAGE_PLAN"], "fakeResponses": {"fixtureId": "p5-e03", "expectedCitations": ["e03-s1", "e03-s2"]}, "annotationStatus": "DRAFT", "annotatorIds": []
+    },
+    {
+      "id": "p5-education-04", "datasetVersion": "p5-v1", "domain": "EDUCATION", "language": "zh-CN", "title": "社区阅读小组", "userGoal": "以合成项目记录介绍社区阅读小组的组织方法和观察结果。", "style": "EDUCATIONAL",
+      "requiresResearch": true, "requiresImages": true, "expectedRoute": "RESEARCH", "expectedQualityOutcome": "LOCAL_REVISION", "faultScenario": "NONE",
+      "outlineRequirements": {"requiredSections": ["组织方式", "参与情况", "改进建议"], "forbiddenSections": ["参与者姓名"], "minSections": 3, "maxSections": 5},
+      "referenceFacts": [
+        {"id": "e04-f1", "statement": "项目持续八周", "allowedSourceIds": ["e04-s1"], "weight": 1},
+        {"id": "e04-f2", "statement": "平均每周有三十二人参加", "allowedSourceIds": ["e04-s1", "e04-s2"], "weight": 1},
+        {"id": "e04-f3", "statement": "讨论由六名志愿者轮值主持", "allowedSourceIds": ["e04-s2"], "weight": 1}
+      ],
+      "replaySources": [
+        {"id": "e04-s1", "url": "https://reading-lab.invalid/e04/attendance", "title": "阅读小组出席记录", "excerpt": "合成记录：项目持续八周，平均每周有三十二人参加。", "capturedAt": "2026-08-14T00:00:00Z", "contentSha256": "1919191919191919191919191919191919191919191919191919191919191919", "sourceType": "SYNTHETIC_REPLAY"},
+        {"id": "e04-s2", "url": "https://community-lab.invalid/e04/hosts", "title": "主持轮值记录", "excerpt": "合成记录：平均每周三十二人参加，六名志愿者轮值主持讨论。", "capturedAt": "2026-08-14T00:00:00Z", "contentSha256": "2020202020202020202020202020202020202020202020202020202020202020", "sourceType": "SYNTHETIC_REPLAY"}
+      ],
+      "requiredCitationFactIds": ["e04-f1", "e04-f2", "e04-f3"], "styleRubric": "p5-style-v1", "readabilityRubric": "p5-readability-v1", "forbiddenClaims": ["阅读能力已被项目显著提高"], "expectedArtifacts": ["ARTICLE_MARKDOWN", "QUALITY_REPORT", "IMAGE_PLAN"], "fakeResponses": {"fixtureId": "p5-e04", "expectedCitations": ["e04-s1", "e04-s2"]}, "annotationStatus": "DRAFT", "annotatorIds": []
+    },
+    {
+      "id": "p5-education-05", "datasetVersion": "p5-v1", "domain": "EDUCATION", "language": "zh-CN", "title": "教师备课助手试用", "userGoal": "根据合成试用记录说明教师备课助手的效率收益与审核责任。", "style": "PROFESSIONAL",
+      "requiresResearch": true, "requiresImages": true, "expectedRoute": "RESEARCH", "expectedQualityOutcome": "ACCEPT_FIRST_ROUND", "faultScenario": "SECTION_FAILURE",
+      "outlineRequirements": {"requiredSections": ["试用范围", "时间变化", "审核责任"], "forbiddenSections": ["替代教师结论"], "minSections": 3, "maxSections": 5},
+      "referenceFacts": [
+        {"id": "e05-f1", "statement": "十二名教师完成试用", "allowedSourceIds": ["e05-s1"], "weight": 1},
+        {"id": "e05-f2", "statement": "备课中位时间减少十八分钟", "allowedSourceIds": ["e05-s1", "e05-s2"], "weight": 2},
+        {"id": "e05-f3", "statement": "所有输出在使用前由教师审核", "allowedSourceIds": ["e05-s2"], "weight": 2}
+      ],
+      "replaySources": [
+        {"id": "e05-s1", "url": "https://teacher-lab.invalid/e05/time", "title": "备课时间记录", "excerpt": "合成记录：十二名教师完成试用，备课中位时间减少十八分钟。", "capturedAt": "2026-08-15T00:00:00Z", "contentSha256": "2121212121212121212121212121212121212121212121212121212121212121", "sourceType": "SYNTHETIC_REPLAY"},
+        {"id": "e05-s2", "url": "https://review-lab.invalid/e05/policy", "title": "教师审核规则", "excerpt": "合成记录：中位时间减少十八分钟，所有输出在使用前仍由教师审核。", "capturedAt": "2026-08-15T00:00:00Z", "contentSha256": "2222222222222222222222222222222222222222222222222222222222222222", "sourceType": "SYNTHETIC_REPLAY"}
+      ],
+      "requiredCitationFactIds": ["e05-f1", "e05-f2", "e05-f3"], "styleRubric": "p5-style-v1", "readabilityRubric": "p5-readability-v1", "forbiddenClaims": ["助手能够独立决定教学内容"], "expectedArtifacts": ["ARTICLE_MARKDOWN", "QUALITY_REPORT", "IMAGE_PLAN"], "fakeResponses": {"fixtureId": "p5-e05", "expectedCitations": ["e05-s1", "e05-s2"]}, "annotationStatus": "DRAFT", "annotatorIds": []
+    },
+    {
+      "id": "p5-education-06", "datasetVersion": "p5-v1", "domain": "EDUCATION", "language": "zh-CN", "title": "跨学科项目学习周", "userGoal": "利用合成材料复盘一次跨学科项目学习周的协作和交付。", "style": "EDUCATIONAL",
+      "requiresResearch": true, "requiresImages": true, "expectedRoute": "RESEARCH", "expectedQualityOutcome": "ACCEPT_FIRST_ROUND", "faultScenario": "DUPLICATE_CONTINUE",
+      "outlineRequirements": {"requiredSections": ["任务设计", "协作过程", "交付复盘"], "forbiddenSections": ["学生身份信息"], "minSections": 3, "maxSections": 5},
+      "referenceFacts": [
+        {"id": "e06-f1", "statement": "共有九个学生小组", "allowedSourceIds": ["e06-s1"], "weight": 1},
+        {"id": "e06-f2", "statement": "每组需要提交原型和反思日志", "allowedSourceIds": ["e06-s1", "e06-s2"], "weight": 1},
+        {"id": "e06-f3", "statement": "八个小组按时完成两项交付", "allowedSourceIds": ["e06-s2"], "weight": 2}
+      ],
+      "replaySources": [
+        {"id": "e06-s1", "url": "https://project-lab.invalid/e06/tasks", "title": "项目任务说明", "excerpt": "合成记录：九个小组参与，每组提交原型与反思日志两项交付。", "capturedAt": "2026-08-16T00:00:00Z", "contentSha256": "2323232323232323232323232323232323232323232323232323232323232323", "sourceType": "SYNTHETIC_REPLAY"},
+        {"id": "e06-s2", "url": "https://delivery-lab.invalid/e06/results", "title": "项目交付记录", "excerpt": "合成记录：交付要求为原型和反思日志，八个小组按时完成两项内容。", "capturedAt": "2026-08-16T00:00:00Z", "contentSha256": "2424242424242424242424242424242424242424242424242424242424242424", "sourceType": "SYNTHETIC_REPLAY"}
+      ],
+      "requiredCitationFactIds": ["e06-f1", "e06-f2", "e06-f3"], "styleRubric": "p5-style-v1", "readabilityRubric": "p5-readability-v1", "forbiddenClaims": ["所有小组都按时完成"], "expectedArtifacts": ["ARTICLE_MARKDOWN", "QUALITY_REPORT", "IMAGE_PLAN"], "fakeResponses": {"fixtureId": "p5-e06", "expectedCitations": ["e06-s1", "e06-s2"]}, "annotationStatus": "DRAFT", "annotatorIds": []
+    },
+    {
+      "id": "p5-education-07", "datasetVersion": "p5-v1", "domain": "EDUCATION", "language": "zh-CN", "title": "如何设计一次复盘", "userGoal": "面向学生社团写一篇无需外部资料的复盘方法入门。", "style": "EDUCATIONAL",
+      "requiresResearch": false, "requiresImages": false, "expectedRoute": "NO_RESEARCH", "expectedQualityOutcome": "ACCEPT_FIRST_ROUND", "faultScenario": "NONE",
+      "outlineRequirements": {"requiredSections": ["复盘目标", "提问框架", "行动项"], "forbiddenSections": ["绩效评判"], "minSections": 3, "maxSections": 5},
+      "referenceFacts": [], "replaySources": [], "requiredCitationFactIds": [], "styleRubric": "p5-style-v1", "readabilityRubric": "p5-readability-v1", "forbiddenClaims": ["复盘用于追责个人"], "expectedArtifacts": ["ARTICLE_MARKDOWN", "QUALITY_REPORT"], "fakeResponses": {"fixtureId": "p5-e07", "expectedCitations": []}, "annotationStatus": "DRAFT", "annotatorIds": []
+    },
+    {
+      "id": "p5-education-08", "datasetVersion": "p5-v1", "domain": "EDUCATION", "language": "zh-CN", "title": "给孩子的提问练习", "userGoal": "设计一篇面向家长的开放式提问练习说明，不引用研究结论。", "style": "WARM",
+      "requiresResearch": false, "requiresImages": false, "expectedRoute": "NO_RESEARCH", "expectedQualityOutcome": "ACCEPT_FIRST_ROUND", "faultScenario": "NONE",
+      "outlineRequirements": {"requiredSections": ["为什么提问", "练习示例", "倾听提醒"], "forbiddenSections": ["医学建议"], "minSections": 3, "maxSections": 5},
+      "referenceFacts": [], "replaySources": [], "requiredCitationFactIds": [], "styleRubric": "p5-style-v1", "readabilityRubric": "p5-readability-v1", "forbiddenClaims": ["练习保证提升智力"], "expectedArtifacts": ["ARTICLE_MARKDOWN", "QUALITY_REPORT"], "fakeResponses": {"fixtureId": "p5-e08", "expectedCitations": []}, "annotationStatus": "DRAFT", "annotatorIds": []
+    },
+    {
+      "id": "p5-education-09", "datasetVersion": "p5-v1", "domain": "EDUCATION", "language": "zh-CN", "title": "小组讨论主持指南", "userGoal": "写一份无需外部来源的小组讨论主持指南，突出参与平衡。", "style": "EDUCATIONAL",
+      "requiresResearch": false, "requiresImages": false, "expectedRoute": "NO_RESEARCH", "expectedQualityOutcome": "ACCEPT_FIRST_ROUND", "faultScenario": "NONE",
+      "outlineRequirements": {"requiredSections": ["会前准备", "讨论推进", "会后记录"], "forbiddenSections": ["强制发言"], "minSections": 3, "maxSections": 5},
+      "referenceFacts": [], "replaySources": [], "requiredCitationFactIds": [], "styleRubric": "p5-style-v1", "readabilityRubric": "p5-readability-v1", "forbiddenClaims": ["沉默等于没有贡献"], "expectedArtifacts": ["ARTICLE_MARKDOWN", "QUALITY_REPORT"], "fakeResponses": {"fixtureId": "p5-e09", "expectedCitations": []}, "annotationStatus": "DRAFT", "annotatorIds": []
+    },
+    {
+      "id": "p5-education-10", "datasetVersion": "p5-v1", "domain": "EDUCATION", "language": "zh-CN", "title": "建立个人学习档案", "userGoal": "介绍一种虚构学生可执行的个人学习档案方法，不作效果承诺。", "style": "EDUCATIONAL",
+      "requiresResearch": false, "requiresImages": false, "expectedRoute": "NO_RESEARCH", "expectedQualityOutcome": "ACCEPT_FIRST_ROUND", "faultScenario": "NONE",
+      "outlineRequirements": {"requiredSections": ["档案内容", "每周维护", "阶段回顾"], "forbiddenSections": ["成绩预测"], "minSections": 3, "maxSections": 5},
+      "referenceFacts": [], "replaySources": [], "requiredCitationFactIds": [], "styleRubric": "p5-style-v1", "readabilityRubric": "p5-readability-v1", "forbiddenClaims": ["档案保证提高成绩"], "expectedArtifacts": ["ARTICLE_MARKDOWN", "QUALITY_REPORT"], "fakeResponses": {"fixtureId": "p5-e10", "expectedCitations": []}, "annotationStatus": "DRAFT", "annotatorIds": []
+    },
+    {
+      "id": "p5-emotion-01", "datasetVersion": "p5-v1", "domain": "EMOTION", "language": "zh-CN", "title": "社区花园的一年", "userGoal": "依据合成社区记录写一个温暖但克制的花园共建故事。", "style": "WARM",
+      "requiresResearch": true, "requiresImages": true, "expectedRoute": "RESEARCH", "expectedQualityOutcome": "LOCAL_REVISION", "faultScenario": "NONE",
+      "outlineRequirements": {"requiredSections": ["起点", "共同劳动", "一年后的变化"], "forbiddenSections": ["真实人物姓名"], "minSections": 3, "maxSections": 5},
+      "referenceFacts": [
+        {"id": "m01-f1", "statement": "最初有十六户报名", "allowedSourceIds": ["m01-s1"], "weight": 1},
+        {"id": "m01-f2", "statement": "全年组织二十四次共同劳动", "allowedSourceIds": ["m01-s1", "m01-s2"], "weight": 1},
+        {"id": "m01-f3", "statement": "年末仍有十二户持续参与", "allowedSourceIds": ["m01-s2"], "weight": 2}
+      ],
+      "replaySources": [
+        {"id": "m01-s1", "url": "https://garden-lab.invalid/m01/start", "title": "花园报名记录", "excerpt": "合成记录：最初十六户报名，全年共组织二十四次共同劳动。", "capturedAt": "2026-08-21T00:00:00Z", "contentSha256": "2525252525252525252525252525252525252525252525252525252525252525", "sourceType": "SYNTHETIC_REPLAY"},
+        {"id": "m01-s2", "url": "https://community-lab.invalid/m01/year", "title": "花园年度记录", "excerpt": "合成记录：全年二十四次共同劳动后，年末仍有十二户持续参与。", "capturedAt": "2026-08-21T00:00:00Z", "contentSha256": "2626262626262626262626262626262626262626262626262626262626262626", "sourceType": "SYNTHETIC_REPLAY"}
+      ],
+      "requiredCitationFactIds": ["m01-f1", "m01-f2", "m01-f3"], "styleRubric": "p5-style-v1", "readabilityRubric": "p5-readability-v1", "forbiddenClaims": ["花园解决了所有邻里矛盾"], "expectedArtifacts": ["ARTICLE_MARKDOWN", "QUALITY_REPORT", "IMAGE_PLAN"], "fakeResponses": {"fixtureId": "p5-m01", "expectedCitations": ["m01-s1", "m01-s2"]}, "annotationStatus": "DRAFT", "annotatorIds": []
+    },
+    {
+      "id": "p5-emotion-02", "datasetVersion": "p5-v1", "domain": "EMOTION", "language": "zh-CN", "title": "旧照片数字整理日", "userGoal": "根据合成活动记录讲述一次代际协作的旧照片整理活动。", "style": "WARM",
+      "requiresResearch": true, "requiresImages": true, "expectedRoute": "RESEARCH", "expectedQualityOutcome": "LOCAL_REVISION", "faultScenario": "NONE",
+      "outlineRequirements": {"requiredSections": ["活动缘起", "协作过程", "保存边界"], "forbiddenSections": ["可识别个人信息"], "minSections": 3, "maxSections": 5},
+      "referenceFacts": [
+        {"id": "m02-f1", "statement": "活动有九名长者和九名青年参加", "allowedSourceIds": ["m02-s1"], "weight": 1},
+        {"id": "m02-f2", "statement": "当天完成三百二十张照片扫描", "allowedSourceIds": ["m02-s1", "m02-s2"], "weight": 1},
+        {"id": "m02-f3", "statement": "二十七张因授权不明未公开", "allowedSourceIds": ["m02-s2"], "weight": 2}
+      ],
+      "replaySources": [
+        {"id": "m02-s1", "url": "https://memory-lab.invalid/m02/event", "title": "照片整理活动记录", "excerpt": "合成记录：九名长者与九名青年参加，当天扫描三百二十张照片。", "capturedAt": "2026-08-22T00:00:00Z", "contentSha256": "2727272727272727272727272727272727272727272727272727272727272727", "sourceType": "SYNTHETIC_REPLAY"},
+        {"id": "m02-s2", "url": "https://archive-lab.invalid/m02/consent", "title": "照片授权记录", "excerpt": "合成记录：共扫描三百二十张，其中二十七张因授权不明而未公开。", "capturedAt": "2026-08-22T00:00:00Z", "contentSha256": "2828282828282828282828282828282828282828282828282828282828282828", "sourceType": "SYNTHETIC_REPLAY"}
+      ],
+      "requiredCitationFactIds": ["m02-f1", "m02-f2", "m02-f3"], "styleRubric": "p5-style-v1", "readabilityRubric": "p5-readability-v1", "forbiddenClaims": ["所有照片均已公开"], "expectedArtifacts": ["ARTICLE_MARKDOWN", "QUALITY_REPORT", "IMAGE_PLAN"], "fakeResponses": {"fixtureId": "p5-m02", "expectedCitations": ["m02-s1", "m02-s2"]}, "annotationStatus": "DRAFT", "annotatorIds": []
+    },
+    {
+      "id": "p5-emotion-03", "datasetVersion": "p5-v1", "domain": "EMOTION", "language": "zh-CN", "title": "夜班伙伴互助站", "userGoal": "用合成值班记录描写夜班伙伴互助站，避免夸大心理效果。", "style": "WARM",
+      "requiresResearch": true, "requiresImages": true, "expectedRoute": "RESEARCH", "expectedQualityOutcome": "LOCAL_REVISION", "faultScenario": "NONE",
+      "outlineRequirements": {"requiredSections": ["互助站起点", "值班方式", "边界与转介"], "forbiddenSections": ["医疗结论"], "minSections": 3, "maxSections": 5},
+      "referenceFacts": [
+        {"id": "m03-f1", "statement": "互助站每周开放三个夜晚", "allowedSourceIds": ["m03-s1"], "weight": 1},
+        {"id": "m03-f2", "statement": "共有十四名志愿者轮值", "allowedSourceIds": ["m03-s1", "m03-s2"], "weight": 1},
+        {"id": "m03-f3", "statement": "六次求助被转介到专业渠道", "allowedSourceIds": ["m03-s2"], "weight": 2}
+      ],
+      "replaySources": [
+        {"id": "m03-s1", "url": "https://night-lab.invalid/m03/shifts", "title": "夜班轮值记录", "excerpt": "合成记录：互助站每周开放三个夜晚，十四名志愿者参与轮值。", "capturedAt": "2026-08-23T00:00:00Z", "contentSha256": "2929292929292929292929292929292929292929292929292929292929292929", "sourceType": "SYNTHETIC_REPLAY"},
+        {"id": "m03-s2", "url": "https://care-lab.invalid/m03/referrals", "title": "转介边界记录", "excerpt": "合成记录：十四名志愿者只提供陪伴，六次求助转介到专业渠道。", "capturedAt": "2026-08-23T00:00:00Z", "contentSha256": "3030303030303030303030303030303030303030303030303030303030303030", "sourceType": "SYNTHETIC_REPLAY"}
+      ],
+      "requiredCitationFactIds": ["m03-f1", "m03-f2", "m03-f3"], "styleRubric": "p5-style-v1", "readabilityRubric": "p5-readability-v1", "forbiddenClaims": ["志愿者提供心理治疗"], "expectedArtifacts": ["ARTICLE_MARKDOWN", "QUALITY_REPORT", "IMAGE_PLAN"], "fakeResponses": {"fixtureId": "p5-m03", "expectedCitations": ["m03-s1", "m03-s2"]}, "annotationStatus": "DRAFT", "annotatorIds": []
+    },
+    {
+      "id": "p5-emotion-04", "datasetVersion": "p5-v1", "domain": "EMOTION", "language": "zh-CN", "title": "动物收容所周末", "userGoal": "依据合成值班资料写一个克制的动物收容所志愿故事。", "style": "WARM",
+      "requiresResearch": true, "requiresImages": true, "expectedRoute": "RESEARCH", "expectedQualityOutcome": "LOCAL_REVISION", "faultScenario": "NONE",
+      "outlineRequirements": {"requiredSections": ["第一次值班", "日常任务", "长期责任"], "forbiddenSections": ["真实机构名称"], "minSections": 3, "maxSections": 5},
+      "referenceFacts": [
+        {"id": "m04-f1", "statement": "周末班次有十一名志愿者", "allowedSourceIds": ["m04-s1"], "weight": 1},
+        {"id": "m04-f2", "statement": "完成四十八次笼舍清洁", "allowedSourceIds": ["m04-s1", "m04-s2"], "weight": 1},
+        {"id": "m04-f3", "statement": "三只动物进入后续领养评估", "allowedSourceIds": ["m04-s2"], "weight": 2}
+      ],
+      "replaySources": [
+        {"id": "m04-s1", "url": "https://shelter-lab.invalid/m04/weekend", "title": "周末值班记录", "excerpt": "合成记录：十一名志愿者完成周末班次与四十八次笼舍清洁。", "capturedAt": "2026-08-24T00:00:00Z", "contentSha256": "3131313131313131313131313131313131313131313131313131313131313131", "sourceType": "SYNTHETIC_REPLAY"},
+        {"id": "m04-s2", "url": "https://adoption-lab.invalid/m04/followup", "title": "领养跟进记录", "excerpt": "合成记录：值班完成四十八次清洁，三只动物进入后续领养评估。", "capturedAt": "2026-08-24T00:00:00Z", "contentSha256": "3232323232323232323232323232323232323232323232323232323232323232", "sourceType": "SYNTHETIC_REPLAY"}
+      ],
+      "requiredCitationFactIds": ["m04-f1", "m04-f2", "m04-f3"], "styleRubric": "p5-style-v1", "readabilityRubric": "p5-readability-v1", "forbiddenClaims": ["三只动物已经被领养"], "expectedArtifacts": ["ARTICLE_MARKDOWN", "QUALITY_REPORT", "IMAGE_PLAN"], "fakeResponses": {"fixtureId": "p5-m04", "expectedCitations": ["m04-s1", "m04-s2"]}, "annotationStatus": "DRAFT", "annotatorIds": []
+    },
+    {
+      "id": "p5-emotion-05", "datasetVersion": "p5-v1", "domain": "EMOTION", "language": "zh-CN", "title": "远方家人的周日仪式", "userGoal": "根据合成联系记录讲述异地家庭如何建立可持续的周日仪式。", "style": "WARM",
+      "requiresResearch": true, "requiresImages": true, "expectedRoute": "RESEARCH", "expectedQualityOutcome": "ACCEPT_FIRST_ROUND", "faultScenario": "MODEL_TIMEOUT",
+      "outlineRequirements": {"requiredSections": ["距离", "周日仪式", "不完美的坚持"], "forbiddenSections": ["真实家庭身份"], "minSections": 3, "maxSections": 5},
+      "referenceFacts": [
+        {"id": "m05-f1", "statement": "家庭成员分布在三个城市", "allowedSourceIds": ["m05-s1"], "weight": 1},
+        {"id": "m05-f2", "statement": "十二周内完成十次视频通话", "allowedSourceIds": ["m05-s1", "m05-s2"], "weight": 1},
+        {"id": "m05-f3", "statement": "两次缺席都在次日补上语音留言", "allowedSourceIds": ["m05-s2"], "weight": 1}
+      ],
+      "replaySources": [
+        {"id": "m05-s1", "url": "https://family-lab.invalid/m05/calls", "title": "家庭联系记录", "excerpt": "合成记录：成员分布在三个城市，十二周内完成十次视频通话。", "capturedAt": "2026-08-25T00:00:00Z", "contentSha256": "3333333333333333333333333333333333333333333333333333333333333333", "sourceType": "SYNTHETIC_REPLAY"},
+        {"id": "m05-s2", "url": "https://ritual-lab.invalid/m05/messages", "title": "周日仪式补记", "excerpt": "合成记录：十次通话外，两次缺席都在次日补上语音留言。", "capturedAt": "2026-08-25T00:00:00Z", "contentSha256": "3434343434343434343434343434343434343434343434343434343434343434", "sourceType": "SYNTHETIC_REPLAY"}
+      ],
+      "requiredCitationFactIds": ["m05-f1", "m05-f2", "m05-f3"], "styleRubric": "p5-style-v1", "readabilityRubric": "p5-readability-v1", "forbiddenClaims": ["仪式消除了家庭冲突"], "expectedArtifacts": ["ARTICLE_MARKDOWN", "QUALITY_REPORT", "IMAGE_PLAN"], "fakeResponses": {"fixtureId": "p5-m05", "expectedCitations": ["m05-s1", "m05-s2"]}, "annotationStatus": "DRAFT", "annotatorIds": []
+    },
+    {
+      "id": "p5-emotion-06", "datasetVersion": "p5-v1", "domain": "EMOTION", "language": "zh-CN", "title": "康复跑步小队", "userGoal": "用合成训练日志写一个互相鼓励的跑步小队故事，不提供医疗建议。", "style": "WARM",
+      "requiresResearch": true, "requiresImages": true, "expectedRoute": "RESEARCH", "expectedQualityOutcome": "ACCEPT_FIRST_ROUND", "faultScenario": "CHECKPOINT_RESUME",
+      "outlineRequirements": {"requiredSections": ["相遇", "训练记录", "各自节奏"], "forbiddenSections": ["医疗建议"], "minSections": 3, "maxSections": 5},
+      "referenceFacts": [
+        {"id": "m06-f1", "statement": "小队共有八名成员", "allowedSourceIds": ["m06-s1"], "weight": 1},
+        {"id": "m06-f2", "statement": "六周共组织十八次轻量训练", "allowedSourceIds": ["m06-s1", "m06-s2"], "weight": 1},
+        {"id": "m06-f3", "statement": "所有训练都允许成员提前结束", "allowedSourceIds": ["m06-s2"], "weight": 2}
+      ],
+      "replaySources": [
+        {"id": "m06-s1", "url": "https://running-lab.invalid/m06/log", "title": "小队训练日志", "excerpt": "合成记录：八名成员在六周内组织十八次轻量训练。", "capturedAt": "2026-08-26T00:00:00Z", "contentSha256": "3535353535353535353535353535353535353535353535353535353535353535", "sourceType": "SYNTHETIC_REPLAY"},
+        {"id": "m06-s2", "url": "https://pace-lab.invalid/m06/rules", "title": "训练边界记录", "excerpt": "合成记录：十八次训练都允许成员按自身状态提前结束。", "capturedAt": "2026-08-26T00:00:00Z", "contentSha256": "3636363636363636363636363636363636363636363636363636363636363636", "sourceType": "SYNTHETIC_REPLAY"}
+      ],
+      "requiredCitationFactIds": ["m06-f1", "m06-f2", "m06-f3"], "styleRubric": "p5-style-v1", "readabilityRubric": "p5-readability-v1", "forbiddenClaims": ["跑步能够治疗疾病"], "expectedArtifacts": ["ARTICLE_MARKDOWN", "QUALITY_REPORT", "IMAGE_PLAN"], "fakeResponses": {"fixtureId": "p5-m06", "expectedCitations": ["m06-s1", "m06-s2"]}, "annotationStatus": "DRAFT", "annotatorIds": []
+    },
+    {
+      "id": "p5-emotion-07", "datasetVersion": "p5-v1", "domain": "EMOTION", "language": "zh-CN", "title": "搬家箱里的三封信", "userGoal": "创作一个明确标注为虚构的搬家故事，围绕三封旧信展开。", "style": "WARM",
+      "requiresResearch": false, "requiresImages": false, "expectedRoute": "NO_RESEARCH", "expectedQualityOutcome": "ACCEPT_FIRST_ROUND", "faultScenario": "NONE",
+      "outlineRequirements": {"requiredSections": ["发现", "三封信", "新的开始"], "forbiddenSections": ["真实历史声称"], "minSections": 3, "maxSections": 5},
+      "referenceFacts": [], "replaySources": [], "requiredCitationFactIds": [], "styleRubric": "p5-style-v1", "readabilityRubric": "p5-readability-v1", "forbiddenClaims": ["故事来自真实人物"], "expectedArtifacts": ["ARTICLE_MARKDOWN", "QUALITY_REPORT"], "fakeResponses": {"fixtureId": "p5-m07", "expectedCitations": []}, "annotationStatus": "DRAFT", "annotatorIds": []
+    },
+    {
+      "id": "p5-emotion-08", "datasetVersion": "p5-v1", "domain": "EMOTION", "language": "zh-CN", "title": "雨天共享的一把伞", "userGoal": "写一个简短虚构故事，表现陌生人之间克制的善意。", "style": "WARM",
+      "requiresResearch": false, "requiresImages": false, "expectedRoute": "NO_RESEARCH", "expectedQualityOutcome": "ACCEPT_FIRST_ROUND", "faultScenario": "NONE",
+      "outlineRequirements": {"requiredSections": ["雨天", "同行", "分别"], "forbiddenSections": ["宏大社会结论"], "minSections": 3, "maxSections": 5},
+      "referenceFacts": [], "replaySources": [], "requiredCitationFactIds": [], "styleRubric": "p5-style-v1", "readabilityRubric": "p5-readability-v1", "forbiddenClaims": ["事件真实发生"], "expectedArtifacts": ["ARTICLE_MARKDOWN", "QUALITY_REPORT"], "fakeResponses": {"fixtureId": "p5-m08", "expectedCitations": []}, "annotationStatus": "DRAFT", "annotatorIds": []
+    },
+    {
+      "id": "p5-emotion-09", "datasetVersion": "p5-v1", "domain": "EMOTION", "language": "zh-CN", "title": "给一年后的自己", "userGoal": "写一篇引导读者给未来自己写信的温和练习说明。", "style": "WARM",
+      "requiresResearch": false, "requiresImages": false, "expectedRoute": "NO_RESEARCH", "expectedQualityOutcome": "ACCEPT_FIRST_ROUND", "faultScenario": "NONE",
+      "outlineRequirements": {"requiredSections": ["写信前", "可以写什么", "如何保存"], "forbiddenSections": ["心理治疗承诺"], "minSections": 3, "maxSections": 5},
+      "referenceFacts": [], "replaySources": [], "requiredCitationFactIds": [], "styleRubric": "p5-style-v1", "readabilityRubric": "p5-readability-v1", "forbiddenClaims": ["练习能够治愈焦虑"], "expectedArtifacts": ["ARTICLE_MARKDOWN", "QUALITY_REPORT"], "fakeResponses": {"fixtureId": "p5-m09", "expectedCitations": []}, "annotationStatus": "DRAFT", "annotatorIds": []
+    },
+    {
+      "id": "p5-emotion-10", "datasetVersion": "p5-v1", "domain": "EMOTION", "language": "zh-CN", "title": "周五晚的慢晚餐", "userGoal": "创作一个虚构家庭通过慢晚餐重新学习倾听的故事。", "style": "WARM",
+      "requiresResearch": false, "requiresImages": false, "expectedRoute": "NO_RESEARCH", "expectedQualityOutcome": "ACCEPT_FIRST_ROUND", "faultScenario": "NONE",
+      "outlineRequirements": {"requiredSections": ["匆忙日常", "慢晚餐", "保留沉默"], "forbiddenSections": ["家庭关系诊断"], "minSections": 3, "maxSections": 5},
+      "referenceFacts": [], "replaySources": [], "requiredCitationFactIds": [], "styleRubric": "p5-style-v1", "readabilityRubric": "p5-readability-v1", "forbiddenClaims": ["一次晚餐解决所有问题"], "expectedArtifacts": ["ARTICLE_MARKDOWN", "QUALITY_REPORT"], "fakeResponses": {"fixtureId": "p5-m10", "expectedCitations": []}, "annotationStatus": "DRAFT", "annotatorIds": []
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 # P2：受控工具、可追溯研究与 Skills 执行计划
 
-> 状态：进行中；E1–E5 已完成，受注册 Search Tool 与框架 `read_skill` 兼容验证留待后续独立工作。
+> 状态：`IN_PROGRESS`；E1–E5 已完成，受注册 Search Tool 与框架 `read_skill` 兼容验证留待后续独立工作。
 > 日期：2026-08-29
 > 依据：[plan.md](plan.md)、[development_log.md](development_log.md)、[p1_execution_plan.md](p1_execution_plan.md) 与当前代码。
 

@@ -1,6 +1,6 @@
 # P4：实时可观测 UI 与运行治理执行计划
 
-状态：执行中  
+状态：`STAGING`；核心事件、运行详情、Artifact/Context 面板与模型调用测量已实现，默认关闭，未完成项移交 Harness H3/H5。
 前置条件：P1 的 Run/checkpoint 持久化与 P2/P3 的 Tool、质量、Artifact 契约已可用；P3 默认 feature flag 继续关闭。  
 目标：在不暴露模型原始流、Prompt、密钥、网页正文或框架事件格式的前提下，使一次 Agent Run 的状态、路由、节点、产物、质量与成本可回放、可展示、可排障。
 

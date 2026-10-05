@@ -1,0 +1,18 @@
+passage:
+  demo:
+    acknowledge-non-production: ${PASSAGE_DEMO_ACKNOWLEDGE_NON_PRODUCTION:false}
+
+article:
+  agent:
+    observability:
+      events-enabled: true
+      context-snapshots-enabled: false
+
+spring:
+  ai:
+    openai:
+      base-url: ${LITELLM_BASE_URL:http://127.0.0.1:9}
+      api-key: ${LITELLM_API_KEY:demo-not-used}
+      chat:
+        options:
+          model: ${LITELLM_MODEL:demo-fixture-not-called}

@@ -1,6 +1,6 @@
 # P3 E6.4A：质量确认继续图片接口执行清单
 
-> 状态：执行中（continue service 与 HTTP 接口已接入；测试与 Testcontainers 验收待完成）
+> 状态：`DONE`；continue service、HTTP 接口、恢复和持久化验收已完成，阶段整体仍为 `STAGING`
 > 决策：采用 quality-continue 接口；旧文章接口保持不变。
 
 ## HTTP 契约

@@ -1,0 +1,166 @@
+{
+  "reportStatus": "DRAFT",
+  "publicationStatus": "NON_RELEASE",
+  "variants": [
+    {
+      "variant": "legacy",
+      "samples": 1,
+      "succeeded": 1,
+      "failed": 0,
+      "successRate": 1,
+      "macroFactSupportRate": 0.75,
+      "factSupportByDomain": {
+        "TECHNOLOGY": 0.75,
+        "EDUCATION": null,
+        "EMOTION": null
+      },
+      "macroCitationValidityRate": 0.666667,
+      "macroCitationCoverageRate": 0.666667,
+      "qualityMedian": 64.1667,
+      "qualityAtLeast75": 0,
+      "qualityCompleteSamples": 1,
+      "criticalFailureCount": 0,
+      "endToEndP50Ms": 4000,
+      "endToEndP95Ms": 4000,
+      "firstTokenP50Ms": 800,
+      "firstTokenP95Ms": 800,
+      "usageCompleteSamples": 1,
+      "usageCoverageRate": 1,
+      "totalInputTokens": 1000,
+      "totalOutputTokens": 500,
+      "totalEstimatedCost": 0.00125,
+      "recoverySuccessRate": null,
+      "duplicateSideEffectRate": 0,
+      "averageRevisionGain": null,
+      "unmarkedSectionPreservationRate": 1
+    },
+    {
+      "variant": "multi_agent_no_review",
+      "samples": 1,
+      "succeeded": 1,
+      "failed": 0,
+      "successRate": 1,
+      "macroFactSupportRate": 1,
+      "factSupportByDomain": {
+        "TECHNOLOGY": 1,
+        "EDUCATION": null,
+        "EMOTION": null
+      },
+      "macroCitationValidityRate": 1,
+      "macroCitationCoverageRate": 1,
+      "qualityMedian": 95.5,
+      "qualityAtLeast75": 1,
+      "qualityCompleteSamples": 1,
+      "criticalFailureCount": 0,
+      "endToEndP50Ms": 6000,
+      "endToEndP95Ms": 6000,
+      "firstTokenP50Ms": 900,
+      "firstTokenP95Ms": 900,
+      "usageCompleteSamples": 0,
+      "usageCoverageRate": 0,
+      "totalInputTokens": null,
+      "totalOutputTokens": null,
+      "totalEstimatedCost": null,
+      "recoverySuccessRate": null,
+      "duplicateSideEffectRate": 0,
+      "averageRevisionGain": null,
+      "unmarkedSectionPreservationRate": 1
+    },
+    {
+      "variant": "multi_agent_full",
+      "samples": 1,
+      "succeeded": 1,
+      "failed": 0,
+      "successRate": 1,
+      "macroFactSupportRate": 1,
+      "factSupportByDomain": {
+        "TECHNOLOGY": 1,
+        "EDUCATION": null,
+        "EMOTION": null
+      },
+      "macroCitationValidityRate": 1,
+      "macroCitationCoverageRate": 1,
+      "qualityMedian": 100,
+      "qualityAtLeast75": 1,
+      "qualityCompleteSamples": 1,
+      "criticalFailureCount": 0,
+      "endToEndP50Ms": 8000,
+      "endToEndP95Ms": 8000,
+      "firstTokenP50Ms": 1000,
+      "firstTokenP95Ms": 1000,
+      "usageCompleteSamples": 1,
+      "usageCoverageRate": 1,
+      "totalInputTokens": 1800,
+      "totalOutputTokens": 900,
+      "totalEstimatedCost": 0.00225,
+      "recoverySuccessRate": 1,
+      "duplicateSideEffectRate": 0,
+      "averageRevisionGain": 20,
+      "unmarkedSectionPreservationRate": 1
+    }
+  ],
+  "comparisons": [
+    {
+      "baseline": "legacy",
+      "candidate": "multi_agent_no_review",
+      "qualityMedianAbsoluteDelta": 31.3333,
+      "qualityMedianRelativeDelta": 0.488311,
+      "macroFactSupportAbsoluteDelta": 0.25,
+      "macroCitationValidityAbsoluteDelta": 0.333333,
+      "endToEndP95AbsoluteDeltaMs": 2000,
+      "endToEndP95RelativeDelta": 0.5,
+      "inputTokenRelativeDelta": null,
+      "outputTokenRelativeDelta": null,
+      "estimatedCostAbsoluteDelta": null,
+      "marginalCostPerQualityPoint": null
+    },
+    {
+      "baseline": "multi_agent_no_review",
+      "candidate": "multi_agent_full",
+      "qualityMedianAbsoluteDelta": 4.5,
+      "qualityMedianRelativeDelta": 0.04712,
+      "macroFactSupportAbsoluteDelta": 0,
+      "macroCitationValidityAbsoluteDelta": 0,
+      "endToEndP95AbsoluteDeltaMs": 2000,
+      "endToEndP95RelativeDelta": 0.333333,
+      "inputTokenRelativeDelta": null,
+      "outputTokenRelativeDelta": null,
+      "estimatedCostAbsoluteDelta": null,
+      "marginalCostPerQualityPoint": null
+    },
+    {
+      "baseline": "legacy",
+      "candidate": "multi_agent_full",
+      "qualityMedianAbsoluteDelta": 35.8333,
+      "qualityMedianRelativeDelta": 0.558441,
+      "macroFactSupportAbsoluteDelta": 0.25,
+      "macroCitationValidityAbsoluteDelta": 0.333333,
+      "endToEndP95AbsoluteDeltaMs": 4000,
+      "endToEndP95RelativeDelta": 1,
+      "inputTokenRelativeDelta": 0.8,
+      "outputTokenRelativeDelta": 0.8,
+      "estimatedCostAbsoluteDelta": 0.001,
+      "marginalCostPerQualityPoint": 0.00002791
+    }
+  ],
+  "draftThresholdChecks": {
+    "status": "INCOMPLETE_DRAFT",
+    "checks": {
+      "successRateAtLeast29Of30": null,
+      "noCriticalFailures": true,
+      "macroFsrAtLeast090": true,
+      "macroCvrAtLeast095": true,
+      "macroCcrAtLeast090": true,
+      "qualityMedianAtLeast80": true,
+      "atLeast24QualityScoresAt75": null,
+      "recoveryRate100Percent": true,
+      "duplicateSideEffectRateZero": true
+    }
+  },
+  "contextStrategies": [
+    {
+      "strategy": "NOT_IMPLEMENTED",
+      "status": "NOT_IMPLEMENTED"
+    }
+  ]
+}

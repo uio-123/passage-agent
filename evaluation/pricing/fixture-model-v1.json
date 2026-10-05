@@ -1,0 +1,12 @@
+{
+  "pricingVersion": "fixture-model-v1",
+  "currency": "USD",
+  "effectiveFrom": "2026-08-31",
+  "source": "TEST_ONLY_SYNTHETIC_PRICE",
+  "models": {
+    "fixture-model": {
+      "inputPerMillion": 0.5,
+      "outputPerMillion": 1.5
+    }
+  }
+}

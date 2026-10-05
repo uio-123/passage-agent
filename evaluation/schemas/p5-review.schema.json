@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://passage-agent.invalid/schemas/p5-review.schema.json",
+  "title": "Passage Agent P5 independent human review",
+  "type": "object",
+  "required": ["datasetVersion", "datasetSha256", "reviewerId", "role", "reviewedAt", "samples"],
+  "properties": {
+    "datasetVersion": { "const": "p5-v1" },
+    "datasetSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "reviewerId": { "type": "string", "pattern": "^[a-z0-9][a-z0-9_-]{2,31}$" },
+    "role": { "const": "REVIEWER" },
+    "reviewedAt": { "type": ["string", "null"], "format": "date-time" },
+    "samples": {
+      "type": "array",
+      "minItems": 30,
+      "maxItems": 30,
+      "items": {
+        "type": "object",
+        "required": ["sampleId", "facts", "sources", "forbiddenClaims", "sampleDecision", "notes"],
+        "properties": {
+          "sampleId": { "type": "string" },
+          "facts": { "type": "array" },
+          "sources": { "type": "array" },
+          "forbiddenClaims": { "type": "array" },
+          "sampleDecision": { "enum": ["APPROVE", "REJECT", null] },
+          "notes": { "type": "string", "maxLength": 1000 }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

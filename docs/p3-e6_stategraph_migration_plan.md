@@ -1,6 +1,6 @@
 # P3 E6：文章主流程质量闭环迁移执行计划
 
-> 状态：待评审；确认前不接入 `ArticleWorkflowRunner` 运行时分支。
+> 状态：`STAGING`；Runner 分支、质量继续接口与独立图片图已接入，`article.agent.quality-loop.enabled` 默认仍为 `false`。
 > 前置：P1 checkpoint/幂等、P2 ResearchBundle、P3 E1–E5 与四个生产模型适配器。
 
 ## 1. 目标与边界

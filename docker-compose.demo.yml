@@ -1,0 +1,29 @@
+services:
+  mysql:
+    container_name: passage-agent-demo-mysql
+
+  redis:
+    container_name: passage-agent-demo-redis
+
+  backend:
+    container_name: passage-agent-demo-backend
+    environment:
+      SPRING_PROFILES_ACTIVE: prod,demo
+      PASSAGE_DEMO_ACKNOWLEDGE_NON_PRODUCTION: ${PASSAGE_DEMO_ACKNOWLEDGE_NON_PRODUCTION:?demo acknowledgement is required}
+      LITELLM_BASE_URL: ${LITELLM_BASE_URL:-http://127.0.0.1:9}
+      LITELLM_API_KEY: ${LITELLM_API_KEY:-demo-not-used}
+      LITELLM_MODEL: ${LITELLM_MODEL:-demo-fixture-not-called}
+      PEXELS_API_KEY: ${PEXELS_API_KEY:-demo-not-used}
+
+  frontend:
+    container_name: passage-agent-demo-frontend
+
+networks:
+  app-network:
+    name: passage-agent-demo-network
+
+volumes:
+  mysql-data:
+    name: passage-agent-demo-mysql-data
+  redis-data:
+    name: passage-agent-demo-redis-data

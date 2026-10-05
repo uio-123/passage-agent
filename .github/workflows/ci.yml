@@ -1,0 +1,104 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  MAVEN_ARGS: -B -ntp
+
+jobs:
+  l0-static-and-dataset:
+    name: L0 static, dataset and Compose
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+      - name: Run L0 checks
+        run: node scripts/ci/run-l0.mjs
+
+  l1-backend:
+    name: L1 backend offline regression
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Run backend tests without external services
+        run: mvn $MAVEN_ARGS test
+
+  l1-frontend:
+    name: L1 frontend type-check and build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run build
+
+  l2-persistence-integration:
+    name: L2 MySQL Testcontainers integration
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Assert Docker is available
+        run: docker info
+      - name: Run persistence integration tests
+        run: mvn $MAVEN_ARGS test -Ppersistence-integration
+
+  l3-compose-demo:
+    name: L3 deterministic Compose demo
+    if: github.event_name != 'pull_request'
+    needs: [l0-static-and-dataset, l1-backend, l1-frontend, l2-persistence-integration]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+      - name: Build and start isolated demo stack
+        run: docker compose --env-file .env.demo.example -f docker-compose.yml -f docker-compose.demo.yml up -d --build
+      - name: Verify deterministic workflow, recovery and idempotency
+        run: node scripts/demo/smoke.mjs http://localhost:18123 300000
+      - name: Print service state on failure
+        if: failure()
+        run: docker compose --env-file .env.demo.example -f docker-compose.yml -f docker-compose.demo.yml ps
+      - name: Stop demo stack
+        if: always()
+        run: docker compose --env-file .env.demo.example -f docker-compose.yml -f docker-compose.demo.yml down

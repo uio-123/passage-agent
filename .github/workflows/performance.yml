@@ -1,0 +1,42 @@
+name: P5 performance draft
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: p5-performance-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  l5-deterministic-performance:
+    name: L5 manual deterministic matrix
+    runs-on: ubuntu-24.04
+    timeout-minutes: 65
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+      - name: Build and start isolated demo stack
+        run: docker compose --env-file .env.demo.example -f docker-compose.yml -f docker-compose.demo.yml up -d --build
+      - name: Verify demo contract
+        run: node scripts/demo/smoke.mjs http://localhost:18123 300000
+      - name: Run fixed 1/4/8/16 matrix
+        run: node performance/run-load.mjs performance/scenarios/docker-demo-v1.json http://localhost:18123 performance/reports/github-${{ github.run_id }}
+      - name: Upload DRAFT/NON_RELEASE report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: p5-performance-draft-${{ github.run_id }}
+          path: performance/reports/github-${{ github.run_id }}
+          if-no-files-found: error
+          retention-days: 30
+      - name: Print service state on failure
+        if: failure()
+        run: docker compose --env-file .env.demo.example -f docker-compose.yml -f docker-compose.demo.yml ps
+      - name: Stop demo stack
+        if: always()
+        run: docker compose --env-file .env.demo.example -f docker-compose.yml -f docker-compose.demo.yml down

@@ -1,6 +1,6 @@
 # P3 E6.2：Runner Feature-Flag 分支执行清单
 
-> 状态：执行中
+> 状态：`DONE`；Runner 分支已接入，质量开关默认仍为 `false`
 > 前置：[p3-e6_stategraph_migration_plan.md](p3-e6_stategraph_migration_plan.md)、`P3ContentWorkflowAdapter`、默认关闭的 `article.agent.quality-loop.enabled`。
 
 ## 目标

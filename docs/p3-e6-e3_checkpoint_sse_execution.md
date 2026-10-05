@@ -1,6 +1,6 @@
 # P3 E6.3：Checkpoint、SSE 与恢复兼容执行清单
 
-> 状态：待实施
+> 状态：`DONE`；accepted-content checkpoint、恢复适配与 SSE 兼容已验证
 > 前置：E6.2 Runner flag 分支已完成；不在本步接入图片。
 
 ## 目标

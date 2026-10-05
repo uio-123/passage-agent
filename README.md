@@ -212,6 +212,16 @@ Docker 可用时，可执行 P1 持久化集成测试；该 Profile 会创建并
 mvn test -Ppersistence-integration
 ```
 
+P5 的本地快速门禁会校验评测工具、30 条数据集契约和 Compose 配置；GitHub Actions 另行执行后端、前端、Testcontainers，并在主分支运行确定性 Docker Demo：
+
+```bash
+node scripts/ci/run-l0.mjs
+mvn test
+cd frontend && npm ci && npm run build
+```
+
+评测协议、评分器与压测器已可执行，但当前所有报告均为 `DRAFT/NON_RELEASE`。数据集完成人工双审、裁决与成品盲评前，不发布正式评测结论、性能基线或宣传数字；协议与复核流程见 [P5 执行计划](docs/p5_execution_plan.md) 和 [评测说明](evaluation/README.md)。
+
 P1 已提供 Supervisor 受限路由、持久化 checkpoint、取消优先恢复和图片副作用幂等：同一图片节点在 checkpoint 尚未推进时重试，会复用已保存的首次结果，不会再次调用图片服务。P2 E1–E5 已补充受控 Web Reader 与版本化内置 Skill Registry：研究只能读取已注册 Search 结果提供的 HTTPS 候选 URL，并经 Policy Gateway 持久化脱敏审计与来源；失败不会生成伪引用，重试复用已有来源。P4 已新增默认关闭的安全可观测能力：可回放 Agent Event、运行轨迹、Artifact Manifest、Context Snapshot 及管理员耗时/失败率聚合。该能力不记录 Prompt、模型正文或密钥；当前 Token 和成本尚未被可信采集，界面会明确显示“未采集”。
 
 ### 4. 启动前端
@@ -248,13 +258,21 @@ docker compose up -d --build
 ./start.sh
 ```
 
-### 国内网络使用（镜像加速）
+### 无外部 Key 的确定性 Demo
 
-如果遇到 Docker 镜像拉取失败，使用国内镜像版本：
+该 Demo 使用独立容器、网络和数据卷，走真实 HTTP、MySQL、事件与 Artifact 持久化边界，但不会调用模型、搜索或图片服务。`demo` profile 必须通过显式非生产确认才能启动：
 
 ```bash
-docker compose -f docker-compose.china.yml up -d --build
+docker compose --env-file .env.demo.example -f docker-compose.yml -f docker-compose.demo.yml up -d --build
+node scripts/demo/smoke.mjs http://localhost:18123 300000
+docker compose --env-file .env.demo.example -f docker-compose.yml -f docker-compose.demo.yml down
 ```
+
+Demo 前端位于 `http://localhost:18080`，后端位于 `http://localhost:18123/api`。`down` 保留隔离数据卷，便于复查幂等重放；只有明确要清空 Demo 数据时才使用同一组 Compose 文件执行 `down -v`。这条链路用于工程冒烟，不代表真实模型质量或吞吐。
+
+### 国内网络使用（镜像加速）
+
+仓库当前不维护单独的国内镜像 Compose 文件。如果 Docker Hub 基础镜像拉取失败，可按 `Dockerfile` 中的注释替换基础镜像地址，或在 Docker Desktop 中配置可用的镜像加速器。
 
 ### LiteLLM 网络说明
 
@@ -363,12 +381,17 @@ docker compose down -v
 │   │   ├── api/                     # API 接口
 │   │   └── stores/                  # 状态管理
 │   └── package.json
+├── evaluation/                      # P5 数据集、评分/复核工具与 DRAFT 报告
+├── performance/                     # 确定性压测场景、执行器与 NON_RELEASE 报告
+├── scripts/ci/                      # 本地/CI 快速门禁
+├── scripts/demo/                    # Docker Demo 端到端断言
 ├── sql/                             # 数据库脚本
 │   ├── create_table.sql             # 建表语句
 │   ├── add_agent_run_tables.sql      # Agent 运行记录迁移
 │   ├── init_database.sql            # 初始化数据
 │   └── ...                          # 增量更新脚本
 ├── docker-compose.yml               # Docker 编排
+├── docker-compose.demo.yml          # 隔离、无外部 Key 的 Demo 覆盖
 ├── start.sh                         # 启动脚本
 └── pom.xml                          # Maven 配置
 ```
@@ -491,6 +514,7 @@ public class NewMethodService implements ImageSearchService {
 ## 📖 相关文档
 
 - [文档索引](docs/README.md) - 开发计划、执行文档、兼容性记录与业务说明
+- [Agent Harness 改造计划](docs/harness_execution_plan.md) - 当前基线、统一状态口径与 H1–H5 执行路线
 - [P1.5 执行文档](docs/p1.5_execution_plan.md) - 项目身份迁移的范围、兼容性与验证结果
 - [VIP 功能说明](docs/vip_features.md) - VIP 会员权益介绍
 - [Stripe 支付配置](docs/stripe_setup.md) - 支付功能配置指南

@@ -1,5 +1,38 @@
 # 开发记录
 
+## 2026-10-05 H0：Harness 前基线与文档状态收口
+
+- 新增 `harness_execution_plan.md`，统一使用 `DONE / STAGING / IN_PROGRESS / DRAFT` 四档状态，明确 P3/P4 是默认关闭的 `STAGING`，P2 是 `IN_PROGRESS`，P5 是 `DRAFT`。
+- 记录默认开关、主链路、Typed State、Run/Checkpoint、节点幂等、事件、模型调用、研究和 Artifact 数据模型，作为 Harness H1 前的可回退基线。
+- 修订阶段路线为 H1 Harness/StateManager 门面、H2 Planner/Replan、H3 Context/Tool Runtime、H4 五任务 Staging 对比、H5 按证据决定 Memory、正式 P5 和默认切换。
+- 本轮不改变业务行为，不启用 P3/P4 默认开关；完成后创建 `baseline-before-harness` 提交和标签。
+- 验证结果：L0 14 项 Node 测试通过；默认后端 141 项通过；前端生产构建通过；MySQL Testcontainers 14 项通过、0 跳过；隔离 Docker Demo 冒烟通过并验证 9 个事件、3 个 Artifact 与幂等重放。
+- 当前环境重新构建 Demo 镜像时遇到 Docker Hub 基础镜像元数据解析失败，H0 使用本机已有的 2026-08-31 P5 镜像完成行为验证；镜像源恢复情况记录在 Harness 基线文档。
+
+## 2026-08-31 P5 E2–E5：评分器、CI、压测与 Docker Demo
+
+- 按用户确认调整阶段门禁：E1 人工双审/裁决不再阻塞 E2–E5 工程实现，但继续阻断正式评测、性能基线接受和宣传数字。现有评测与性能报告统一为 `DRAFT/NON_RELEASE`，release 模式对未裁决数据、缺失人工盲评或不完整三变体矩阵保持 fail-closed。
+- E2 新增确定性评分器、版本化测试价格、三变体汇总/代价对比、nearest-rank 分位数和 Skill 回归比较。usage 缺失保持 `null/PARTIAL`，缺失人工质量项不伪造正式 QS；报告目录不可覆盖。评分器、复核与 Skill 工具共 12 项 Node 测试通过。
+- E3 新增 L0–L3 GitHub Actions：评测/压测工具与两套 Compose 配置、后端离线回归、前端构建、MySQL Testcontainers、主分支确定性 Demo 分 Job 执行。完整性能矩阵放入仅可人工触发的 L5 工作流，上传工件仍明确为草稿，不自动接受基线。
+- E4 新增确定性 HTTP 压测器、`1/4/8/16` 固定矩阵、四类场景混合、环境指纹、恢复/重复副作用与相对基线门槛。短时容器矩阵只用于验证执行器和并发链路，报告保持 `INCOMPLETE_DRAFT`，未写入 README 性能数字；压测器 2 项 Node 测试通过。
+- E5 新增受显式非生产确认保护的 `demo` profile、隔离 Compose 覆盖、非敏感环境示例和端到端冒烟脚本。场景不调用模型/搜索/图片服务，但经过真实 Run、Event、ArticleVersion 和 Artifact MySQL 持久化边界，并验证可恢复故障及幂等重放。
+- Docker 首轮验证发现镜像入口把 `prod` profile 写死，已改为默认 `prod` 且允许环境覆盖；随后发现历史 SQL 固定使用 `ai_passage_creator`，Demo 改为在独立数据卷中沿用规范 schema 名。并发冒烟又暴露 MySQL/JVM 时钟精度边界导致迁移时间倒退，Demo 适配改为 `max(now, updatedAt)`，不放宽生产状态机规则，并用数据库时钟领先的单测覆盖。
+- 最终验证：L0 的 14 项 Node 测试、数据集契约及生产/Demo Compose 配置通过；前端生产构建通过；默认后端回归 85 项通过；宿主权限下真实 MySQL Testcontainers 14 项通过、0 跳过；Docker 冒烟通过并验证 9 个安全事件、3 个 Artifact 和重复请求无新增副作用。工作流 YAML 已完成解析校验。
+
+## 2026-08-31 P5 E1：30 条合成评测草案与发布门禁
+
+- 新增 `evaluation/`，提供 JSON Schema、科技/教育/情感各 10 条的 `p5-v1` 合成样本、内容哈希 Manifest 和使用说明；研究/免研究、配图、局部返工与可恢复故障分层满足 D0 协议。
+- 研究材料全部使用 `.invalid` 域名和合成短摘录，不保存真实用户或网页内容。30 条均明确为 `DRAFT`，Manifest 的 `releaseReady=false`；双人复核与裁决完成前不进入正式评测，也不生成宣传数字。
+- 新增 `EvaluationDatasetContractTest`，验证样本数、分层、唯一 ID、事实—来源—引用闭包、合成来源、安全字段和 Manifest SHA-256。首次运行遇既有 Windows 编译器资源关闭错误，未改代码重跑后 2 项通过。
+- 新增独立复核/裁决 Schema 和 Node CLI：两名不同 reviewer 逐事实、来源、权重与禁用断言标注；输入均绑定规范化 SHA-256，分歧保留 `null` 直至裁决者填写结论和理由。发布命令只生成 ignored work 候选，任一否决项阻止 promotion，不直接覆盖正式数据。
+- `review-workflow.test.mjs` 3 项通过，覆盖未完成复核拒绝、两份完整复核与一致裁决、分歧不得自动通过及否决不得提升发布状态。
+
+## 2026-08-31 P5 D0：评测与工程化执行基线
+
+- 新增 `p5_execution_plan.md`，先于实现冻结 30 条 `p5-v1` 数据集分层、人工复核比例、事实支持率/引用有效率/综合质量/成本/延迟/恢复公式和发布硬门槛。
+- CI 固定为离线 PR 快速层、Docker/Testcontainers 集成层、Compose 演示层，以及人工触发的真实模型评测/压测层；真实 Key 和公网不进入默认 PR 门禁。
+- 压测分为 Fake Model 确定性容量基线和真实模型容量观察；Docker demo 使用显式覆盖与隔离 profile。README 只在对应阶段验收后按 CI、Demo、评测、性能、素材顺序更新，当前不写任何未测量数字。
+
 ## 2026-08-31 P4 收口 C3：真实 MySQL 事件验证与序号修复
 
 - 宿主 Docker Desktop 已验证可用；`AgentCheckpointPersistenceIntegrationTest` 在 Testcontainers MySQL 中运行 14 项、0 失败、0 错误、0 跳过。

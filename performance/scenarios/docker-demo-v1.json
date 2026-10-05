@@ -1,0 +1,18 @@
+{
+  "scenarioVersion": "docker-demo-v1",
+  "reportStatus": "DRAFT",
+  "publicationStatus": "NON_RELEASE",
+  "targetPath": "/api/demo/scenarios/run",
+  "concurrency": [1, 4, 8, 16],
+  "warmupSeconds": 30,
+  "measureSeconds": 180,
+  "cooldownSeconds": 30,
+  "repetitions": 3,
+  "requestTimeoutMs": 15000,
+  "mix": {
+    "NORMAL_RESEARCH": 6,
+    "NO_RESEARCH": 2,
+    "REVIEW_REVISION": 1,
+    "RECOVERABLE_FAULT": 1
+  }
+}

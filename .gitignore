@@ -69,4 +69,7 @@ frontend/src/config/env.ts
 *.swo
 *~
 
+# Local evaluation review work (may contain reviewer notes)
+evaluation/work/
+
 .claude/**

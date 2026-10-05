@@ -1,0 +1,72 @@
+{
+  "reportStatus": "DRAFT",
+  "publicationStatus": "NON_RELEASE",
+  "aggregates": [
+    {
+      "concurrency": 1,
+      "repetitions": 1,
+      "requests": 91,
+      "successRateMedian": 1,
+      "throughputPerMinuteMedian": 2708.3333,
+      "successLatencyP50MedianMs": 20.6762,
+      "successLatencyP95MedianMs": 30.1003,
+      "recoverySuccessRate": 1,
+      "recoveryLatencyP50MedianMs": 22.9722,
+      "recoveryLatencyP95MedianMs": 35.4219,
+      "nodeRetryRate": 0.098901,
+      "duplicateSideEffectRate": 0
+    },
+    {
+      "concurrency": 4,
+      "repetitions": 1,
+      "requests": 280,
+      "successRateMedian": 1,
+      "throughputPerMinuteMedian": 8300.3953,
+      "successLatencyP50MedianMs": 28.2118,
+      "successLatencyP95MedianMs": 36.6951,
+      "recoverySuccessRate": 1,
+      "recoveryLatencyP50MedianMs": 28.893,
+      "recoveryLatencyP95MedianMs": 38.5149,
+      "nodeRetryRate": 0.1,
+      "duplicateSideEffectRate": 0
+    },
+    {
+      "concurrency": 8,
+      "repetitions": 1,
+      "requests": 458,
+      "successRateMedian": 1,
+      "throughputPerMinuteMedian": 13543.6175,
+      "successLatencyP50MedianMs": 34.8406,
+      "successLatencyP95MedianMs": 43.6343,
+      "recoverySuccessRate": 1,
+      "recoveryLatencyP50MedianMs": 37.7448,
+      "recoveryLatencyP95MedianMs": 45.256,
+      "nodeRetryRate": 0.098253,
+      "duplicateSideEffectRate": 0
+    },
+    {
+      "concurrency": 16,
+      "repetitions": 1,
+      "requests": 583,
+      "successRateMedian": 1,
+      "throughputPerMinuteMedian": 16997.0845,
+      "successLatencyP50MedianMs": 54.8267,
+      "successLatencyP95MedianMs": 77.9917,
+      "recoverySuccessRate": 1,
+      "recoveryLatencyP50MedianMs": 54.6748,
+      "recoveryLatencyP95MedianMs": 75.2013,
+      "nodeRetryRate": 0.101201,
+      "duplicateSideEffectRate": 0
+    }
+  ],
+  "thresholdChecks": {
+    "status": "INCOMPLETE_DRAFT",
+    "checks": {
+      "allConcurrencySuccessAtLeast99Percent": true,
+      "allRecoverableFaultsRecovered": true,
+      "duplicateSideEffectRateZero": true,
+      "concurrency8AtLeastHalfLinearEfficiency": true,
+      "acceptedBaselineRegression": null
+    }
+  }
+}

@@ -1,0 +1,71 @@
+{
+  "protocolVersion": "p5-protocol-v1",
+  "runId": "draft-scorer-selftest-v1",
+  "requestedReportStatus": "DRAFT",
+  "sourceMode": "SCORER_SELF_TEST",
+  "datasetVersion": "p5-v1",
+  "datasetSha256": "0ddee6dc110de3b5e5dc4fe4c1c663d1f16e2b50a3eaf6051d43156c24dfebf4",
+  "gitSha": "UNCOMMITTED",
+  "contextStrategy": "NOT_IMPLEMENTED",
+  "modelConfig": {"route": "fixture-model", "temperature": 0, "seed": 1},
+  "humanProductReviews": [],
+  "samples": [
+    {
+      "sampleId": "p5-technology-01", "variant": "legacy", "terminalStatus": "SUCCEEDED", "failureCode": null,
+      "claims": [
+        {"claimId": "c1", "weight": 1, "classification": "SUPPORTED"},
+        {"claimId": "c2", "weight": 2, "classification": "SUPPORTED"},
+        {"claimId": "c3", "weight": 1, "classification": "UNSUPPORTED"}
+      ],
+      "citations": [
+        {"sourceId": "t01-s1", "factId": "t01-f1", "valid": true},
+        {"sourceId": "t01-s1", "factId": "t01-f2", "valid": true},
+        {"sourceId": "unknown-source", "factId": "t01-f3", "valid": false}
+      ],
+      "satisfiedRequiredSections": ["背景", "试点结果"], "forbiddenSectionsPresent": [],
+      "styleScores": [1, 1, 1, 1, 1], "readabilityScores": [1, 1, 1, 1, 1], "criticalFailures": [],
+      "startedAt": "2026-08-31T00:00:00Z", "completedAt": "2026-08-31T00:00:04Z", "firstTokenMs": 800,
+      "modelCalls": [{"model": "fixture-model", "inputTokens": 1000, "outputTokens": 500}],
+      "recoverableFaultInjected": false, "recoverySucceeded": null, "externalSideEffectAttempts": 1, "duplicateExternalSideEffects": 0,
+      "preRevisionScores": [], "postRevisionScores": [], "unmarkedSections": 3, "byteIdenticalUnmarkedSections": 3
+    },
+    {
+      "sampleId": "p5-technology-01", "variant": "multi_agent_no_review", "terminalStatus": "SUCCEEDED", "failureCode": null,
+      "claims": [
+        {"claimId": "c1", "weight": 1, "classification": "SUPPORTED"},
+        {"claimId": "c2", "weight": 2, "classification": "SUPPORTED"},
+        {"claimId": "c3", "weight": 1, "classification": "SUPPORTED"}
+      ],
+      "citations": [
+        {"sourceId": "t01-s1", "factId": "t01-f1", "valid": true},
+        {"sourceId": "t01-s1", "factId": "t01-f2", "valid": true},
+        {"sourceId": "t01-s2", "factId": "t01-f3", "valid": true}
+      ],
+      "satisfiedRequiredSections": ["背景", "试点结果", "风险与建议"], "forbiddenSectionsPresent": [],
+      "styleScores": [2, 2, 1, 2, 1], "readabilityScores": [2, 2, 2, 1, 2], "criticalFailures": [],
+      "startedAt": "2026-08-31T00:00:00Z", "completedAt": "2026-08-31T00:00:06Z", "firstTokenMs": 900,
+      "modelCalls": [{"model": "fixture-model", "inputTokens": null, "outputTokens": null}],
+      "recoverableFaultInjected": false, "recoverySucceeded": null, "externalSideEffectAttempts": 2, "duplicateExternalSideEffects": 0,
+      "preRevisionScores": [], "postRevisionScores": [], "unmarkedSections": 3, "byteIdenticalUnmarkedSections": 3
+    },
+    {
+      "sampleId": "p5-technology-01", "variant": "multi_agent_full", "terminalStatus": "SUCCEEDED", "failureCode": null,
+      "claims": [
+        {"claimId": "c1", "weight": 1, "classification": "SUPPORTED"},
+        {"claimId": "c2", "weight": 2, "classification": "SUPPORTED"},
+        {"claimId": "c3", "weight": 1, "classification": "SUPPORTED"}
+      ],
+      "citations": [
+        {"sourceId": "t01-s1", "factId": "t01-f1", "valid": true},
+        {"sourceId": "t01-s1", "factId": "t01-f2", "valid": true},
+        {"sourceId": "t01-s2", "factId": "t01-f3", "valid": true}
+      ],
+      "satisfiedRequiredSections": ["背景", "试点结果", "风险与建议"], "forbiddenSectionsPresent": [],
+      "styleScores": [2, 2, 2, 2, 2], "readabilityScores": [2, 2, 2, 2, 2], "criticalFailures": [],
+      "startedAt": "2026-08-31T00:00:00Z", "completedAt": "2026-08-31T00:00:08Z", "firstTokenMs": 1000,
+      "modelCalls": [{"model": "fixture-model", "inputTokens": 1800, "outputTokens": 900}],
+      "recoverableFaultInjected": true, "recoverySucceeded": true, "externalSideEffectAttempts": 3, "duplicateExternalSideEffects": 0,
+      "preRevisionScores": [70], "postRevisionScores": [90], "unmarkedSections": 2, "byteIdenticalUnmarkedSections": 2
+    }
+  ]
+}

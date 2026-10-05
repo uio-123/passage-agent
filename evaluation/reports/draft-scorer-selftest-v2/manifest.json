@@ -1,0 +1,34 @@
+{
+  "runId": "draft-scorer-selftest-v1",
+  "protocolVersion": "p5-protocol-v1",
+  "reportStatus": "DRAFT",
+  "publicationStatus": "NON_RELEASE",
+  "releaseGateStatus": "LOCKED_NON_RELEASE",
+  "releaseEligible": false,
+  "releaseBlockers": [
+    "dataset manifest releaseReady=false",
+    "dataset contains non-adjudicated samples",
+    "sourceMode is SCORER_SELF_TEST",
+    "three-variant 30-sample matrix is incomplete",
+    "three-variant matrix has 87 missing cells",
+    "fewer than 9 human product reviews",
+    "fewer than 3 human reviews for TECHNOLOGY",
+    "fewer than 3 human reviews for EDUCATION",
+    "fewer than 3 human reviews for EMOTION"
+  ],
+  "sourceMode": "SCORER_SELF_TEST",
+  "datasetVersion": "p5-v1",
+  "datasetSha256": "0ddee6dc110de3b5e5dc4fe4c1c663d1f16e2b50a3eaf6051d43156c24dfebf4",
+  "pricingVersion": "fixture-model-v1",
+  "pricingSource": "TEST_ONLY_SYNTHETIC_PRICE",
+  "currency": "USD",
+  "gitSha": "UNCOMMITTED",
+  "modelConfig": {
+    "route": "fixture-model",
+    "temperature": 0,
+    "seed": 1
+  },
+  "contextStrategy": "NOT_IMPLEMENTED",
+  "generatedAt": "2026-08-31T09:56:35.065Z",
+  "disclaimer": "NON_RELEASE scorer output; not a formal evaluation result and not approved for README or resume claims."
+}
