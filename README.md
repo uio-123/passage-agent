@@ -521,6 +521,8 @@ public class NewMethodService implements ImageSearchService {
 
 - [文档索引](docs/README.md) - 开发计划、执行文档、兼容性记录与业务说明
 - [Agent Harness 改造计划](docs/harness_execution_plan.md) - 当前基线、统一状态口径与 H1–H5 执行路线
+- [简历与面试交付材料](docs/resume_delivery.md) - 项目叙事、架构图、Demo 与 H4 证据
+- [五分钟 Demo 操作手册](docs/demo_runbook.md) - 本地、Docker、真实模型与 H4 演示步骤
 - [P1.5 执行文档](docs/p1.5_execution_plan.md) - 项目身份迁移的范围、兼容性与验证结果
 - [VIP 功能说明](docs/vip_features.md) - VIP 会员权益介绍
 - [Stripe 支付配置](docs/stripe_setup.md) - 支付功能配置指南

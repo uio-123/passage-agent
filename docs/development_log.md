@@ -1,5 +1,11 @@
 # 开发记录
 
+## 2026-10-06 简历交付材料与五分钟 Demo
+
+- 新增 `docs/resume_delivery.md`，整理一句话定位、架构图、默认/STAGING/DEFER 能力矩阵、H4 真实数据、面试追问与简历可用表述。
+- 新增 `docs/demo_runbook.md`，固定无 Key Demo、真实模型主链路、H4 staging 的执行命令、演示顺序和常见故障。
+- 明确演示时不得把 P3、Harness、Memory、Compression 或 Sandbox 宣称为默认上线能力；所有量化结论必须引用 H4/P5 报告。
+
 ## 2026-10-06 H4 收口：返工、旧链路指标与模型超时
 
 - H4 staging 新增一次性 Reviewer Fixture，在 `REVIEW_REVISION` 场景强制局部返工；最终报告 `reviewerReworkExercised=true`，完成一轮 Revision 后以受控 `REJECT_MAX_ROUNDS` 结束。

@@ -26,6 +26,8 @@
 | [H4 staging result](../harness/H4_STAGING_REPORT.md) | H4 五任务真实模型对比、修复项、限制与默认开关结论 |
 | [H5 scope decision](../harness/H5_DECISION.md) | Memory、压缩、默认切换、正式 P5 与 Sandbox 的暂缓决定和重新进入门槛 |
 | [resume_validation_plan.md](resume_validation_plan.md) | 简历项目的分层验证预算、可选重型评测和交付优先级 |
+| [resume_delivery.md](resume_delivery.md) | 一页式项目叙事、架构图、H4 证据、面试问题与简历可用表述 |
+| [demo_runbook.md](demo_runbook.md) | 五分钟 Demo 的准备、命令、演示顺序和常见故障 |
 | [development_log.md](development_log.md) | 重要开发决策、实施结果与验证记录 |
 | [framework-compatibility.md](framework-compatibility.md) | Spring AI / Java / LiteLLM 兼容性与版本冻结证据 |
 | [deerflow_reference.md](deerflow_reference.md) | Agent Harness 架构参考材料 |
