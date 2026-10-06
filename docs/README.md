@@ -24,6 +24,8 @@
 | [p5_execution_plan.md](p5_execution_plan.md) | P5 评测集、指标公式与门槛、CI 分层、压测、Docker 演示和 README 的严格交付顺序 |
 | [harness_execution_plan.md](harness_execution_plan.md) | H0 基线、统一阶段状态、Harness H1–H5 路线与非目标 |
 | [H4 staging result](../harness/H4_STAGING_REPORT.md) | H4 五任务真实模型对比、修复项、限制与默认开关结论 |
+| [H5 scope decision](../harness/H5_DECISION.md) | Memory、压缩、默认切换、正式 P5 与 Sandbox 的暂缓决定和重新进入门槛 |
+| [resume_validation_plan.md](resume_validation_plan.md) | 简历项目的分层验证预算、可选重型评测和交付优先级 |
 | [development_log.md](development_log.md) | 重要开发决策、实施结果与验证记录 |
 | [framework-compatibility.md](framework-compatibility.md) | Spring AI / Java / LiteLLM 兼容性与版本冻结证据 |
 | [deerflow_reference.md](deerflow_reference.md) | Agent Harness 架构参考材料 |

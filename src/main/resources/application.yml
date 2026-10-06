@@ -21,6 +21,11 @@ spring:
       port: 6379
       database: 0
       password:
+  ai:
+    openai:
+      chat:
+        options:
+          stream-usage: true
 mybatis-flex:
   configuration:
     map-underscore-to-camel-case: false
@@ -91,6 +96,8 @@ article:
       enabled: true
     # Agent 最大迭代次数
     max-iterations: 10
+    # 单次模型调用的端到端超时；Flux 与阻塞 complete 都会取消上游
+    model-timeout: 120s
     quality-loop:
       # P3 E6 主流程迁移开关；默认继续使用旧正文图
       enabled: false

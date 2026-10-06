@@ -27,6 +27,7 @@ import java.util.function.Supplier;
 public class WorkflowMetricsCollector {
 
     private final ConcurrentMap<String, MutableExecutionMetrics> executions = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, StageScope> activeScopes = new ConcurrentHashMap<>();
     private final InheritableThreadLocal<StageScope> activeStage = new InheritableThreadLocal<>();
     private final AgentModelCallMetricService modelCallMetrics;
 
@@ -54,6 +55,7 @@ public class WorkflowMetricsCollector {
                                            Supplier<WorkflowExecutionResult> operation) {
         StageScope previous = activeStage.get();
         StageScope scope = new StageScope();
+        StageScope previousScoped = activeScopes.put(runId, scope);
         activeStage.set(scope);
         long startedAt = System.nanoTime();
         try {
@@ -73,12 +75,17 @@ public class WorkflowMetricsCollector {
             } else {
                 activeStage.set(previous);
             }
+            if (previousScoped == null) {
+                activeScopes.remove(runId, scope);
+            } else {
+                activeScopes.replace(runId, scope, previousScoped);
+            }
         }
     }
 
     /** Called only by the project-owned AiModelPort decorator. */
     public void recordModelCall() {
-        StageScope scope = activeStage.get();
+        StageScope scope = currentScope();
         if (scope != null) {
             scope.incrementModelCall();
         }
@@ -86,10 +93,20 @@ public class WorkflowMetricsCollector {
 
     /** Accepts metadata extracted from the actual model response; null fields mean the provider did not report them. */
     public void recordModelMeasurement(ModelCallMeasurement measurement) {
-        StageScope scope = activeStage.get();
+        StageScope scope = currentScope();
         if (scope != null) {
             scope.add(measurement);
         }
+    }
+
+    private StageScope currentScope() {
+        StageScope threadScope = activeStage.get();
+        if (threadScope != null) {
+            return threadScope;
+        }
+        // The legacy graph uses executor threads created before a stage starts.
+        // Fall back only when one workflow is active so concurrent runs never share metrics.
+        return activeScopes.size() == 1 ? activeScopes.values().iterator().next() : null;
     }
 
     private void persistModelCalls(String runId, WorkflowStage stage, StageScope scope) {

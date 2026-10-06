@@ -222,6 +222,8 @@ cd frontend && npm ci && npm run build
 
 评测协议、评分器与压测器已可执行，但当前所有报告均为 `DRAFT/NON_RELEASE`。数据集完成人工双审、裁决与成品盲评前，不发布正式评测结论、性能基线或宣传数字；协议与复核流程见 [P5 执行计划](docs/p5_execution_plan.md) 和 [评测说明](evaluation/README.md)。
 
+当前项目主要作为求职作品：默认保留 109 项快速离线回归，不再为简单 DTO 或相似边界主动扩测试。真实模型 5×2 对比在面试前手工运行一轮；重复 3 次与正式 P5 属于可选证据，只在需要宣称稳定性或量化收益时执行。详见 [简历项目验证策略](docs/resume_validation_plan.md)。
+
 P1 已提供 Supervisor 受限路由、持久化 checkpoint、取消优先恢复和图片副作用幂等：同一图片节点在 checkpoint 尚未推进时重试，会复用已保存的首次结果，不会再次调用图片服务。P2 E1–E5 已补充受控 Web Reader 与版本化内置 Skill Registry：研究只能读取已注册 Search 结果提供的 HTTPS 候选 URL，并经 Policy Gateway 持久化脱敏审计与来源；失败不会生成伪引用，重试复用已有来源。P4 已新增默认关闭的安全可观测能力：可回放 Agent Event、运行轨迹、Artifact Manifest、Context Snapshot 及管理员耗时/失败率聚合。该能力不记录 Prompt、模型正文或密钥；当前 Token 和成本尚未被可信采集，界面会明确显示“未采集”。
 
 ### 4. 启动前端

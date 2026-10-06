@@ -663,7 +663,9 @@ GET    /api/skills                        查询可用内置 Skills 及版本
 2. H1 已完成：`AgentHarness` 与 `StateManager` 已作为现有 Runner、Run、Checkpoint 和 Recovery 的纯委托门面落地。
 3. H2 已完成：版本化 Supervisor Plan、Reviewer/Human Feedback 和规则驱动 Replan 已落地，尚未持久化到主 Run。
 4. H3 已完成：Agent 级 Context、ToolExecutor 和受控 TaskWorkspace 已落地，尚未接入默认执行链路。
-5. 执行 H4：用 5 个真实任务比较旧 Workflow 与 Harness Workflow，再按证据决定 Memory、正式 P5 和默认开关。
+5. H4 已完成：真实模型下旧 Workflow 与 Harness 均完成 5/5 受控终态；Harness 延迟约为旧链路 3.3 倍、Token 约 3.8 倍，Reviewer 返工与恢复检查通过，但净收益未证明。
+6. H5 已完成：Memory、压缩、默认切换、正式 P5 与 Docker Sandbox 全部暂缓；H4 的返工、成本可见性和超时缺口已补齐，剩余重点是同口径质量评分和延迟优化。
+7. 简历项目验证已收敛：保留当前 109 项离线回归，不继续扩测试；真实模型 5×2 面试前跑一轮，重复 3 次和正式 P5 改为可选。
 
 ## 12. 设计参考与使用边界
 

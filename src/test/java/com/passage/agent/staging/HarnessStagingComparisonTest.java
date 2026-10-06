@@ -10,6 +10,10 @@ import com.passage.agent.agent.checkpoint.NodeExecutionOutcome;
 import com.passage.agent.agent.metrics.WorkflowMetricsCollector;
 import com.passage.agent.agent.research.ResearchBundle;
 import com.passage.agent.agent.review.FactChecker;
+import com.passage.agent.agent.review.ReviewIssue;
+import com.passage.agent.agent.review.ReviewReport;
+import com.passage.agent.agent.review.ReviewSeverity;
+import com.passage.agent.agent.review.ReviewType;
 import com.passage.agent.agent.review.StyleReviewer;
 import com.passage.agent.agent.revision.RevisionAgent;
 import com.passage.agent.agent.run.AgentRun;
@@ -62,6 +66,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -172,12 +177,11 @@ class HarnessStagingComparisonTest {
         try {
             WorkflowExecutionResult result = new com.passage.agent.agent.workflow.ArticleWorkflowRunner(
                     orchestrator, metrics).generateContent(state, ignored -> { });
-            return result(task, false, runId, result.stage().name(), result.state().draft().content(), null, null,
-                    (System.nanoTime() - started) / 1_000_000, null, null);
+            return legacyResult(task, runId, result.stage().name(), result.state().draft().content(),
+                    null, null, (System.nanoTime() - started) / 1_000_000);
         } catch (RuntimeException exception) {
-            return result(task, false, runId, "FAILED", null, exception.getClass().getSimpleName(),
-                    rootMessage(exception),
-                    (System.nanoTime() - started) / 1_000_000, null, null);
+            return legacyResult(task, runId, "FAILED", null, exception.getClass().getSimpleName(),
+                    rootMessage(exception), (System.nanoTime() - started) / 1_000_000);
         }
     }
 
@@ -189,6 +193,7 @@ class HarnessStagingComparisonTest {
         running = running.transitionTo(AgentRunStatus.RUNNING, laterThan(running.updatedAt()));
         runs.sync(running, "h4-harness-start");
         List<SectionTask> sectionTasks = sectionTasks(task);
+        ReviewAgents reviewAgents = reviewAgents(task);
         ResearchBundle research = new ResearchBundle(runId, List.of(), List.of(),
                 List.of("External research is intentionally disabled in H4 first-stage comparison"));
         AtomicReference<QualityWorkflowResult> quality = new AtomicReference<>();
@@ -196,7 +201,8 @@ class HarnessStagingComparisonTest {
         try {
             metrics.measure(runId, WorkflowStage.CONTENT_QUALITY_ACCEPTED, () -> {
                 QualityWorkflowResult result = qualityLoop.execute(
-                        runId, 0L, 2, research, sectionTasks, sectionWriter, factChecker, styleReviewer, revisionAgent);
+                        runId, 0L, 2, research, sectionTasks, sectionWriter,
+                        reviewAgents.factChecker(), reviewAgents.styleReviewer(), revisionAgent);
                 quality.set(result);
                 String markdown = result.drafts().stream().map(SectionDraft::markdown)
                         .collect(java.util.stream.Collectors.joining("\n\n"));
@@ -213,18 +219,18 @@ class HarnessStagingComparisonTest {
                     .collect(java.util.stream.Collectors.joining("\n\n"));
             return result(task, true, runId, result.decision().decision().name(), markdown, null, null,
                     (System.nanoTime() - started) / 1_000_000,
-                    result.averageFactScore(), result.averageStyleScore());
+                    result.averageFactScore(), result.averageStyleScore(), reviewAgents.fixtureInjected());
         } catch (RuntimeException exception) {
             runs.markFailed(runId, "H4_HARNESS_FAILURE");
             return result(task, true, runId, "FAILED", null, exception.getClass().getSimpleName(),
                     rootMessage(exception),
-                    (System.nanoTime() - started) / 1_000_000, null, null);
+                    (System.nanoTime() - started) / 1_000_000, null, null, reviewAgents.fixtureInjected());
         }
     }
 
     private RunResult result(TaskDefinition task, boolean harness, String runId, String status, String content,
                              String errorType, String errorMessage, long durationMs,
-                             Double averageFactScore, Double averageStyleScore) {
+                             Double averageFactScore, Double averageStyleScore, boolean fixtureInjected) {
         List<AgentModelCallMetricRecord> metricsForRun = modelMetrics.listByRunId(runId);
         Long inputTokens = sumTokens(metricsForRun, true);
         Long outputTokens = sumTokens(metricsForRun, false);
@@ -238,7 +244,12 @@ class HarnessStagingComparisonTest {
                 status, errorType, errorMessage, durationMs, modelCalls,
                 toolAudits.listByRunId(runId).size(), retries, revisions,
                 inputTokens, outputTokens, totalTokens, content == null ? 0 : content.length(),
-                content == null ? null : sha256(content), averageFactScore, averageStyleScore);
+                content == null ? null : sha256(content), averageFactScore, averageStyleScore, fixtureInjected);
+    }
+
+    private RunResult legacyResult(TaskDefinition task, String runId, String status, String content,
+                                   String errorType, String errorMessage, long durationMs) {
+        return result(task, false, runId, status, content, errorType, errorMessage, durationMs, null, null, false);
     }
 
     private RecoveryCheck verifyRecovery() {
@@ -358,6 +369,22 @@ class HarnessStagingComparisonTest {
         return tasks;
     }
 
+    private ReviewAgents reviewAgents(TaskDefinition task) {
+        if (!"REVIEW_REVISION".equals(task.scenarioType())) {
+            return new ReviewAgents(factChecker, styleReviewer, false);
+        }
+        AtomicBoolean firstReview = new AtomicBoolean(true);
+        FactChecker forcedFactChecker = request -> {
+            if (firstReview.compareAndSet(true, false)) {
+                return new ReviewReport(ReviewType.FACT, 70, List.of(new ReviewIssue(
+                        request.draft().sectionId(), ReviewSeverity.BLOCKER, "STAGING_FORCED_REVISION",
+                        "Force one bounded staging revision")));
+            }
+            return factChecker.review(request);
+        };
+        return new ReviewAgents(forcedFactChecker, styleReviewer, true);
+    }
+
     private static String requiredEnvironment(String name) {
         String value = System.getenv(name);
         if (value == null || value.isBlank()) {
@@ -449,7 +476,8 @@ class HarnessStagingComparisonTest {
             int contentCharacters,
             String contentHash,
             Double averageFactScore,
-            Double averageStyleScore
+            Double averageStyleScore,
+            boolean fixtureInjected
     ) {
         boolean harness() {
             return "HARNESS".equals(variant);
@@ -458,4 +486,5 @@ class HarnessStagingComparisonTest {
 
     private record RecoveryCheck(boolean successful, int executions, boolean replayReused, int duplicateExternalSideEffects) { }
     private record HumanReplanCheck(boolean successful, String action, int planVersion) { }
+    private record ReviewAgents(FactChecker factChecker, StyleReviewer styleReviewer, boolean fixtureInjected) { }
 }

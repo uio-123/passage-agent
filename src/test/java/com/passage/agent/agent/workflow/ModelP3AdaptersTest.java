@@ -8,6 +8,7 @@ import com.passage.agent.agent.research.ResearchSourceStatus;
 import com.passage.agent.agent.review.FactReviewRequest;
 import com.passage.agent.agent.review.ModelFactChecker;
 import com.passage.agent.agent.review.ModelStyleReviewer;
+import com.passage.agent.agent.review.ReviewIssue;
 import com.passage.agent.agent.revision.ModelRevisionAgent;
 import com.passage.agent.agent.revision.SectionRevisionRequest;
 import com.passage.agent.agent.writing.ModelSectionWriter;
@@ -35,13 +36,14 @@ class ModelP3AdaptersTest {
         assertThatIllegalArgumentException().isThrownBy(() -> new ModelRevisionAgent(model("{\"markdown\":\"new\",\"citationSourceIds\":[\"invented\"]}"), json).revise(revision));
     }
 
-    @Test void factWithoutResearchIsAuditableAndStyleRejectsCrossSectionIssue() {
+    @Test void factWithoutResearchIsAuditableAndStyleIssueIsCoercedToTheReviewedSection() {
         ResearchBundle none = new ResearchBundle("none", List.of(), List.of(), List.of("not requested"));
         var report = new ModelFactChecker(model("unused"), json).review(new FactReviewRequest(new SectionDraft(0, "section", "text", List.of()), none));
         assertThat(report.score()).isEqualTo(100);
         assertThat(report.issues()).singleElement().extracting(issue -> issue.code()).isEqualTo("FACT_ENHANCEMENT_NOT_REQUESTED");
-        assertThatIllegalArgumentException().isThrownBy(() -> new ModelStyleReviewer(model("{\"score\":90,\"issues\":[{\"sectionId\":\"other\",\"severity\":\"MAJOR\",\"code\":\"STYLE\",\"message\":\"fix\"}]}"), json)
-                .review(new SectionDraft(0, "section", "text", List.of())));
+        var style = new ModelStyleReviewer(model("{\"score\":90,\"issues\":[{\"sectionId\":\"other\",\"severity\":\"MAJOR\",\"code\":\"STYLE\",\"message\":\"fix\"}]}"), json)
+                .review(new SectionDraft(0, "section", "text", List.of()));
+        assertThat(style.issues()).singleElement().extracting(ReviewIssue::sectionId).isEqualTo("section");
     }
 
     private static AiModelPort model(String response) { return new AiModelPort() {

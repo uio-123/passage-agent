@@ -1,12 +1,32 @@
 # 开发记录
 
-## 2026-10-06 H4：五任务真实模型 Staging 对比
+## 2026-10-06 H4 收口：返工、旧链路指标与模型超时
+
+- H4 staging 新增一次性 Reviewer Fixture，在 `REVIEW_REVISION` 场景强制局部返工；最终报告 `reviewerReworkExercised=true`，完成一轮 Revision 后以受控 `REJECT_MAX_ROUNDS` 结束。
+- 补齐旧 Workflow 的模型调用与流式 Token 采集：旧链路 5 次调用、18,065 Token；Harness 24 次调用、67,852 Token。最终 5×2 中旧链路与 Harness 均完成 5/5 受控终态，重复副作用为 0。
+- 结构化输出新增控制字符容忍和单章节 Reviewer ID 归一化；模型调用新增 120 秒阻塞/流式超时与取消，避免无限挂起。
+- 最终结论不变：Harness 平均耗时约为旧链路 3.3 倍，且尚未做同口径 legacy 质量评分，因此 `article.agent.quality-loop.enabled` 继续保持 `false`。
+
+## 2026-10-06 简历项目验证策略收敛
+
+- H4 收口后默认离线回归为 109 项，仍保持低成本；项目当前主要作为求职作品，不以生产认证或完整研究评测为目标。
+- 不再为 DTO、简单参数校验和同类失败分支主动扩测试；新增测试只用于防止真实主流程回归或支撑简历中的具体能力/数字。
+- 真实模型 LiteLLM smoke 和 H4 5×2 改为面试前手工验证；H4 重复三次和正式 P5 仅在需要宣称稳定性或量化收益时启用。
+- 后续优先交付稳定 Demo、架构与主流程图、3–5 个真实模型样例、README 定位与取舍、面试讲解材料。策略文档见 `docs/resume_validation_plan.md`。
+
+## 2026-10-06 H5：基于 H4 证据调整后续范围
+
+- 完成 H5 决策：Memory Manager/Retrieval、Context Compression、P3 默认开关、正式 P5 和 Docker Sandbox 全部暂缓。
+- 原因：Harness 在实际五任务中延迟约增加到旧链路的 3.3 倍，且尚未完成同口径 legacy 质量评分，无法证明额外成本值得切换默认。
+- 设定重新进入门槛：同口径质量至少提升 3 分或显著减少人工修改；Harness P95 不超过旧链路 1.5 倍或有充分质量收益；重复运行只在需要稳定性声明时执行。
+- H4 的返工覆盖、旧链路调用/Token、供应商超时与单轮 5×2 已经补齐；剩余 backlog 是同口径 legacy 评分和延迟优化。H5 决策文档见 `harness/H5_DECISION.md`。
+
+## 2026-10-06 H4 首轮：五任务真实模型 Staging 对比（已被上方收口记录取代）
 
 - 新增 `harness-staging` Maven Profile、五条可追溯场景、真实 LiteLLM 执行器和安全报告输出；固定标题与大纲，只比较正文生成、评审和交付边界。
-- 完整运行中旧 Workflow 与 Harness 均 5/5 成功；Harness 平均约 61.3 秒、16 次模型调用、38,575 Token，较旧 Workflow 平均增加约 64% 耗时。恢复检查、人工 MODIFY→Replan 和重复副作用检查通过。
+- 首轮运行中旧 Workflow 与 Harness 均 5/5 成功；Harness 平均约 61.3 秒、16 次模型调用、38,575 Token。该数据已被后续 H4 收口报告替代。
 - H4 暴露并修复：流式 chunk 为 null 导致 NPE；P3 结构化适配器无法解析 Markdown JSON 围栏；并行模型调用丢失 metrics scope；空图片列表被解释为允许全部图片方式。
-- 所有 Harness 任务首轮即 ACCEPT，Reviewer 返工未实际触发；旧 Workflow 的响应式线程未进入度量 scope，其模型调用和 Token 标记为 `UNAVAILABLE`，没有伪造为 0。
-- 后续确认运行在上游 LiteLLM 调用处卡顿约 20 分钟，说明 H4 当前结论可保留，但模型供应商稳定性尚不足以作为发布门禁。
+- 首轮发现 Reviewer 返工未触发、旧 Workflow 指标缺失和上游卡顿；这些问题已在后续 H4 收口记录中修复。
 - 结论：不切换 `article.agent.quality-loop.enabled` 默认值。详细 staging 报告见 `harness/H4_STAGING_REPORT.md`。
 
 ## 2026-10-05 CI 前端干净构建修复

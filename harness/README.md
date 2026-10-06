@@ -16,6 +16,12 @@ The curated result and limitations are recorded in
 [H4_STAGING_REPORT.md](H4_STAGING_REPORT.md). Timestamped raw reports remain local under
 `harness/reports/` and are ignored by Git.
 
+The evidence-based decision for the next scope is recorded in
+[H5_DECISION.md](H5_DECISION.md).
+
+The evidence-based decision for the next scope is recorded in
+[H5_DECISION.md](H5_DECISION.md).
+
 The curated result and limitations are recorded in
 [H4_STAGING_REPORT.md](H4_STAGING_REPORT.md). Timestamped raw reports remain local under
 `harness/reports/` and are ignored by Git.

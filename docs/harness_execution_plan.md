@@ -1,6 +1,6 @@
 # Agent Harness 化改造执行计划
 
-> 状态：H0–H4 `DONE`；H5 未启动
+> 状态：H0–H5 `DONE`；默认主链路未切换
 > 日期：2026-10-05
 > 基线标签：`baseline-before-harness`
 > 目标：在不破坏现有主链路的前提下，把已经存在的 Run、Checkpoint、Planner、Tool、Reviewer、Event 等能力收口为可验证的 Agent Harness，并用小规模真实任务证明收益后再扩大范围。
@@ -57,6 +57,7 @@ StateManager 只管理持久状态
 | Harness H2 | `DONE` | 版本化 Plan、Reviewer/Human Feedback 与规则驱动 Replan 已实现；仅更新计划状态，未切换执行主链路 |
 | Harness H3 | `DONE` | 角色化 Context、ToolExecutor 与受限 TaskWorkspace 已实现；仍未接入默认执行链路 |
 | Harness H4 | `DONE` | 五任务真实模型 staging 完成；Harness 5/5 成功，但净收益未证明，默认开关保持关闭 |
+| Harness H5 | `DONE` | 基于 H4 证据暂缓 Memory、压缩、默认切换、正式 P5 与 Docker Sandbox，并设定重新进入门槛 |
 
 `docs/plan.md` 中各阶段的历史复选框保留为实施记录，不再作为当前状态的唯一事实来源；本矩阵和各阶段执行文档必须保持一致。
 
@@ -172,9 +173,12 @@ Approved Outline
 - 固定覆盖普通创作、长任务、Reviewer 返工、人工修改和失败恢复。
 - 记录任务成功率、质量、人工修改次数、耗时、Token、Tool 调用、重试和恢复成功率。
 - 验收：至少 5/5 完成任务；无重复副作用；形成 Harness 是否带来净收益的书面结论。
-- 实际结果：旧 Workflow 与 Harness 均 5/5 成功；Harness 平均耗时约增加 64%，16 次模型调用、38,575 Token；恢复与人工 Replan 检查通过；Reviewer 返工未触发；旧链路 Token/调用指标不可得。
+- 实际结果：旧 Workflow 与 Harness 均完成 5/5 受控终态；Harness 平均耗时约 3.3 倍，24 次模型调用、67,852 Token；旧 Workflow 5 次调用、18,065 Token；Reviewer 返工 1 轮，恢复、人工 Replan 和幂等检查通过；未证明质量净收益。
 
 ### H5：按证据决定后续范围
+
+> 状态：`DONE`（2026-10-06）。结论：全部暂缓，先稳定 Harness 和补齐 H4 证据。
+> 详见 [H5 scope decision](../harness/H5_DECISION.md)。
 
 只有在 H4 证明有效后，才逐项决定：
 
@@ -183,6 +187,11 @@ Approved Outline
 - P3 默认开关切换。
 - 正式 P5 的 30 条数据、三变体和性能基线。
 - 是否引入 Docker Sandbox。
+
+决策结果：Memory Manager、Context Compression、P3 默认切换、正式 P5 和 Docker Sandbox 均暂缓。
+重新进入前必须满足 H5 文档中的返工覆盖、可比质量、成本可见、供应商稳定和延迟预算门槛。
+对于简历项目，完整 5×2 只要求在面试前稳定完成一轮；重复 3 次和正式 P5 仅在需要宣称稳定性或量化收益时启用，详见
+[简历项目验证策略](resume_validation_plan.md)。
 
 ## 5. 明确不做
 

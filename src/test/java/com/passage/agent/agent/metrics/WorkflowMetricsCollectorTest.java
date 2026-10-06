@@ -87,6 +87,30 @@ class WorkflowMetricsCollectorTest {
                 .isEqualTo(1);
     }
 
+    @Test
+    void capturesModelCallsFromAWorkerCreatedBeforeTheStage() throws Exception {
+        WorkflowMetricsCollector collector = new WorkflowMetricsCollector();
+        WorkflowState state = ArticleWorkflowFixture.workflowState("legacy-metrics-run", "legacy-task");
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        try {
+            executor.submit(() -> { }).get();
+
+            collector.measure("legacy-metrics-run", WorkflowStage.ARTICLE_COMPLETED, () -> {
+                try {
+                    executor.submit(collector::recordModelCall).get();
+                } catch (Exception exception) {
+                    throw new IllegalStateException("Unable to execute metric worker", exception);
+                }
+                return new WorkflowExecutionResult(state, WorkflowStage.ARTICLE_COMPLETED);
+            });
+        } finally {
+            executor.shutdownNow();
+        }
+
+        assertThat(collector.find("legacy-metrics-run").orElseThrow().stages().getFirst().modelCallCount())
+                .isEqualTo(1);
+    }
+
     private ArticleState.TitleResult title(String mainTitle, String subTitle) {
         ArticleState.TitleResult title = new ArticleState.TitleResult();
         title.setMainTitle(mainTitle);
