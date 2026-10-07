@@ -16,9 +16,9 @@
 
 ## 🏗 项目简介
 
-Passage Agent 是一个基于 **Spring AI Alibaba** 构建的智能图文创作平台。它以 Workflow 管理阶段状态、用户审批、恢复和副作用一致性，并在需要开放式推理的节点使用 Agent 生成内容、分析配图和处理后续研究/评审任务。
+Passage Agent 是一个基于 **Spring AI Alibaba** 构建的混合式 Agent 图文创作项目。它以 Workflow 管理状态、审批、恢复、幂等和副作用边界，并在需要开放式推理的节点使用受约束 Agent 完成标题、大纲、正文和配图分析。
 
-当前已上线的主链路是受控的标题—大纲—正文—配图工作流；Research、章节并行写作、评审与局部返工属于后续受限 Agent 能力，详见[开发计划](docs/plan.md)。
+当前项目主要作为**求职作品和面试项目**，不是生产认证项目。默认运行链路是受控的标题—大纲—正文—配图工作流；章节质量闭环、Agent Harness、Context/Tool Runtime 等能力已完成实现，但处于 `STAGING`，默认开关关闭。
 
 ```
 阶段1: 选题 → 生成 3-5 个标题方案 → 用户选择
@@ -26,15 +26,30 @@ Passage Agent 是一个基于 **Spring AI Alibaba** 构建的智能图文创作�
 阶段3: 大纲 → 生成正文 → 分析配图需求 → 生成配图 → 图文合成
 ```
 
+## 📌 当前项目状态
+
+| 范围 | 状态 | 说明 |
+|---|---|---|
+| 标题、大纲、正文、配图主链路 | 默认启用 | 当前正常用户流程 |
+| 用户审批、SSE、图片降级、文章管理 | 默认启用 | 具备完整业务体验 |
+| Run、Checkpoint、恢复、节点幂等 | 默认基础能力 | 支撑故障恢复和副作用一致性 |
+| P3 章节质量闭环 | `STAGING` | `article.agent.quality-loop.enabled=false` |
+| Agent Harness、Plan/Replan、Context、Tool Runtime | `STAGING` | 有契约、实现和测试，尚未成为默认主链路 |
+| H4 真实模型对比 | 已完成一轮 | 10/10 受控终态，返工、恢复和幂等通过 |
+| Memory、Context Compression、Docker Sandbox | `DEFER` | 当前范围明确暂缓 |
+| 正式 P5 30×3 评测 | `DEFER` | 除非需要简历量化收益，否则不执行 |
+
+H4 显示 Harness 功能链路可用，但平均延迟约为旧链路 3.3 倍、模型 Token 约为 3.8 倍，且尚未证明同口径质量优势。因此默认开关继续保持关闭，详细结论见 [H4 报告](harness/H4_STAGING_REPORT.md) 和 [H5 决策](harness/H5_DECISION.md)。
+
 ## 🎯 核心价值
 
 | 特性 | 说明 | 价值 |
 |------|------|------|
-| 🤖 混合式 Agent Workflow | Workflow 管理状态、审批、恢复与幂等；Agent 处理生成与判断 | 既可控、可恢复，也能处理开放式创作任务 |
+| 🤖 混合式 Agent Workflow | Workflow 管理状态、审批、恢复与幂等；Agent 处理生成与判断 | 可控、可恢复，也能处理开放式创作任务 |
 | 🎨 多元配图 | 6 种配图策略 + 自动降级 | 图文并茂，永不中断 |
 | 📡 实时流式输出 | SSE 推送大纲/正文创作过程 | 所见即所得 |
 | 🧑‍💻 人机协作 | 三阶段创作，每步可介入 | 创作可控 |
-| 💎 VIP 会员体系 | Stripe 支付 + 配额管理 | 商业化就绪 |
+| 💎 VIP 会员体系 | Stripe 支付 + 配额管理 | 保留完整商业化示例 |
 | 🐳 Docker 一键部署 | docker compose up 即可运行 | 5 分钟上手 |
 
 ## ✨ 功能特性
@@ -195,7 +210,7 @@ mvn spring-boot:run
 ```powershell
 $env:LITELLM_BASE_URL = "http://localhost:4000"
 $env:LITELLM_API_KEY = "your-litellm-api-key"
-$env:LITELLM_MODEL = "your-model-name"
+$env:LITELLM_MODEL = "qwen3.7-flash"
 ```
 
 接口文档：http://localhost:8567/api/doc.html
@@ -224,7 +239,7 @@ cd frontend && npm ci && npm run build
 
 当前项目主要作为求职作品：默认保留 109 项快速离线回归，不再为简单 DTO 或相似边界主动扩测试。真实模型 5×2 对比在面试前手工运行一轮；重复 3 次与正式 P5 属于可选证据，只在需要宣称稳定性或量化收益时执行。详见 [简历项目验证策略](docs/resume_validation_plan.md)。
 
-P1 已提供 Supervisor 受限路由、持久化 checkpoint、取消优先恢复和图片副作用幂等：同一图片节点在 checkpoint 尚未推进时重试，会复用已保存的首次结果，不会再次调用图片服务。P2 E1–E5 已补充受控 Web Reader 与版本化内置 Skill Registry：研究只能读取已注册 Search 结果提供的 HTTPS 候选 URL，并经 Policy Gateway 持久化脱敏审计与来源；失败不会生成伪引用，重试复用已有来源。P4 已新增默认关闭的安全可观测能力：可回放 Agent Event、运行轨迹、Artifact Manifest、Context Snapshot 及管理员耗时/失败率聚合。该能力不记录 Prompt、模型正文或密钥；当前 Token 和成本尚未被可信采集，界面会明确显示“未采集”。
+P1 已提供 Supervisor 受限路由、持久化 checkpoint、取消优先恢复和图片副作用幂等：同一图片节点在 checkpoint 尚未推进时重试，会复用已保存的首次结果，不会再次调用图片服务。P2 E1–E5 已补充受控 Web Reader 与版本化内置 Skill Registry：研究只能读取已注册 Search 结果提供的 HTTPS 候选 URL，并经 Policy Gateway 持久化脱敏审计与来源；失败不会生成伪引用，重试复用已有来源。P4 已新增默认关闭的安全可观测能力：可回放 Agent Event、运行轨迹、Artifact Manifest、Context Snapshot 及管理员耗时/失败率聚合。该能力不记录 Prompt、模型正文或密钥；模型调用和供应商返回的 Token 已纳入测量，版本化价格表和完整成本结论仍未实现。
 
 ### 4. 启动前端
 
@@ -274,7 +289,7 @@ node scripts/demo/smoke.mjs http://localhost:18123 300000
 docker compose --env-file .env.demo.example -f docker-compose.yml -f docker-compose.demo.yml down
 ```
 
-Demo 前端位于 `http://localhost:18080`，后端位于 `http://localhost:18123/api`。`down` 保留隔离数据卷，便于复查幂等重放；只有明确要清空 Demo 数据时才使用同一组 Compose 文件执行 `down -v`。这条链路用于工程冒烟，不代表真实模型质量或吞吐。
+Demo 前端位于 `http://localhost:18080`，后端位于 `http://localhost:18123/api`。该 Demo 只验证 Run、事件、版本、Artifact、恢复和幂等，不启用真实模型，因此不能在页面中完成“生成一篇真实文章”。要看真实图文生成，需要启动不带 `demo` profile 的主应用并配置可用 LiteLLM。`down` 保留隔离数据卷，便于复查幂等重放；只有明确要清空 Demo 数据时才使用同一组 Compose 文件执行 `down -v`。
 
 ### 国内网络使用（镜像加速）
 
