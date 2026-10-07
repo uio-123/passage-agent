@@ -16,9 +16,9 @@
 
 ## 🏗 项目简介
 
-Passage Agent 是一个基于 **Spring AI Alibaba** 构建的混合式 Agent 图文创作项目。它以 Workflow 管理状态、审批、恢复、幂等和副作用边界，并在需要开放式推理的节点使用受约束 Agent 完成标题、大纲、正文和配图分析。
+Passage Agent 是一个基于 **Spring AI Alibaba** 构建的混合式 Agent 图文创作平台。它将确定性 Workflow 与受约束 Agent 结合：Workflow 负责状态、审批、恢复、幂等和副作用边界，Agent 负责标题、大纲、正文与配图分析等开放式生成任务。
 
-当前项目主要作为**求职作品和面试项目**，不是生产认证项目。默认运行链路是受控的标题—大纲—正文—配图工作流；章节质量闭环、Agent Harness、Context/Tool Runtime 等能力已完成实现，但处于 `STAGING`，默认开关关闭。
+项目当前聚焦于完整的图文创作链路、可控执行、状态恢复和副作用一致性；多租户、合规认证与大规模容量承诺不在当前迭代范围内。默认运行链路是受控的标题—大纲—正文—配图工作流；章节质量闭环、Agent Harness、Context/Tool Runtime 等能力已完成实现，但处于 `STAGING`，默认开关关闭。
 
 ```
 阶段1: 选题 → 生成 3-5 个标题方案 → 用户选择
@@ -37,7 +37,7 @@ Passage Agent 是一个基于 **Spring AI Alibaba** 构建的混合式 Agent 图
 | Agent Harness、Plan/Replan、Context、Tool Runtime | `STAGING` | 有契约、实现和测试，尚未成为默认主链路 |
 | H4 真实模型对比 | 已完成一轮 | 10/10 受控终态，返工、恢复和幂等通过 |
 | Memory、Context Compression、Docker Sandbox | `DEFER` | 当前范围明确暂缓 |
-| 正式 P5 30×3 评测 | `DEFER` | 除非需要简历量化收益，否则不执行 |
+| 正式 P5 30×3 评测 | `DEFER` | 当前证据不足以支撑正式评测，暂不投入 |
 
 H4 显示 Harness 功能链路可用，但平均延迟约为旧链路 3.3 倍、模型 Token 约为 3.8 倍，且尚未证明同口径质量优势。因此默认开关继续保持关闭，详细结论见 [H4 报告](harness/H4_STAGING_REPORT.md) 和 [H5 决策](harness/H5_DECISION.md)。
 
@@ -237,7 +237,7 @@ cd frontend && npm ci && npm run build
 
 评测协议、评分器与压测器已可执行，但当前所有报告均为 `DRAFT/NON_RELEASE`。数据集完成人工双审、裁决与成品盲评前，不发布正式评测结论、性能基线或宣传数字；协议与复核流程见 [P5 执行计划](docs/p5_execution_plan.md) 和 [评测说明](evaluation/README.md)。
 
-当前项目主要作为求职作品：默认保留 109 项快速离线回归，不再为简单 DTO 或相似边界主动扩测试。真实模型 5×2 对比在面试前手工运行一轮；重复 3 次与正式 P5 属于可选证据，只在需要宣称稳定性或量化收益时执行。详见 [简历项目验证策略](docs/resume_validation_plan.md)。
+当前项目以快速离线回归作为日常质量门禁：默认保留 109 项测试，不再为简单 DTO 或相似边界主动扩测试。真实模型 5×2 对比可作为阶段性验证手工运行；重复 3 次与正式 P5 属于可选证据，只在需要宣称稳定性或量化收益时执行。
 
 P1 已提供 Supervisor 受限路由、持久化 checkpoint、取消优先恢复和图片副作用幂等：同一图片节点在 checkpoint 尚未推进时重试，会复用已保存的首次结果，不会再次调用图片服务。P2 E1–E5 已补充受控 Web Reader 与版本化内置 Skill Registry：研究只能读取已注册 Search 结果提供的 HTTPS 候选 URL，并经 Policy Gateway 持久化脱敏审计与来源；失败不会生成伪引用，重试复用已有来源。P4 已新增默认关闭的安全可观测能力：可回放 Agent Event、运行轨迹、Artifact Manifest、Context Snapshot 及管理员耗时/失败率聚合。该能力不记录 Prompt、模型正文或密钥；模型调用和供应商返回的 Token 已纳入测量，版本化价格表和完整成本结论仍未实现。
 
@@ -536,7 +536,6 @@ public class NewMethodService implements ImageSearchService {
 
 - [文档索引](docs/README.md) - 开发计划、执行文档、兼容性记录与业务说明
 - [Agent Harness 改造计划](docs/harness_execution_plan.md) - 当前基线、统一状态口径与 H1–H5 执行路线
-- [简历与面试交付材料](docs/resume_delivery.md) - 项目叙事、架构图、Demo 与 H4 证据
 - [五分钟 Demo 操作手册](docs/demo_runbook.md) - 本地、Docker、真实模型与 H4 演示步骤
 - [P1.5 执行文档](docs/p1.5_execution_plan.md) - 项目身份迁移的范围、兼容性与验证结果
 - [VIP 功能说明](docs/vip_features.md) - VIP 会员权益介绍
